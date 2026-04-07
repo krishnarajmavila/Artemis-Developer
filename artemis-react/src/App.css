@@ -8,7 +8,7 @@
   --green:#00e676;--amber:#ffb300;
 }
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Courier New',monospace;font-size:19px;overflow-x:hidden}
-.mc-wrap{display:grid;grid-template-rows:auto 1fr auto;height:100vh;gap:0}
+.mc-wrap{display:grid;grid-template-rows:auto 1fr auto;height:100dvh;gap:0}
 
 .mc-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:9px 18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
 .mc-logo{font-size:16px;font-weight:700;letter-spacing:3px;color:var(--accent);text-transform:uppercase}

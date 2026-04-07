@@ -1,25 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="80" fill="#0b0d18"/>
-  <!-- Earth -->
   <circle cx="256" cy="310" r="80" fill="#1a3a6b" stroke="#2a5a9b" stroke-width="3"/>
-  <ellipse cx="256" cy="310" rx="80" ry="22" fill="none" stroke="#2a7acc" stroke-width="2"/>
-  <!-- Orbit path -->
   <ellipse cx="256" cy="290" rx="160" ry="90" fill="none" stroke="#00d4ff" stroke-width="2" stroke-dasharray="12 6" opacity="0.6"/>
-  <!-- Capsule/spacecraft -->
   <g transform="translate(385,205) rotate(35)">
     <rect x="-10" y="-18" width="20" height="28" rx="4" fill="#00d4ff"/>
     <polygon points="0,-26 -8,-18 8,-18" fill="#00aacc"/>
     <rect x="-14" y="-4" width="6" height="14" rx="2" fill="#00aacc"/>
     <rect x="8" y="-4" width="6" height="14" rx="2" fill="#00aacc"/>
   </g>
-  <!-- Stars -->
   <circle cx="80" cy="80" r="2" fill="#fff" opacity="0.8"/>
   <circle cx="160" cy="50" r="1.5" fill="#fff" opacity="0.6"/>
   <circle cx="420" cy="90" r="2" fill="#fff" opacity="0.8"/>
   <circle cx="460" cy="150" r="1.5" fill="#fff" opacity="0.5"/>
   <circle cx="50" cy="200" r="1.5" fill="#fff" opacity="0.6"/>
-  <circle cx="110" cy="160" r="1" fill="#fff" opacity="0.7"/>
-  <circle cx="380" cy="60" r="1" fill="#fff" opacity="0.7"/>
-  <!-- Label -->
   <text x="256" y="445" text-anchor="middle" font-family="Courier New, monospace" font-size="44" font-weight="700" letter-spacing="6" fill="#00d4ff">A2</text>
 </svg>
