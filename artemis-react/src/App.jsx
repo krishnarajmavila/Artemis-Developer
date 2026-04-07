@@ -67,6 +67,7 @@ function buildInitialDisp() {
 
 export default function App() {
   const [disp, setDisp] = useState(buildInitialDisp);
+  const [bmacVisible, setBmacVisible] = useState(true);
 
   const trajCanvasRef  = useRef(null);
   const velCanvasRef   = useRef(null);
@@ -327,28 +328,42 @@ export default function App() {
       </div>
       <Footer disp={disp} />
       <InstallToast />
-      <a
-        href="/bmac.html"
-        target="_blank"
-        rel="noopener noreferrer"
-        title="Buy me a coffee"
-        style={{
-          position:'fixed', bottom:'22px', right:'18px', zIndex:9999,
-          display:'inline-flex', alignItems:'center', gap:'6px',
-          background:'#FFDD00', color:'#000',
-          fontWeight:'800', fontSize:'12px', letterSpacing:'0.3px',
-          padding:'9px 14px', borderRadius:'24px',
-          textDecoration:'none', fontFamily:'cursive',
-          boxShadow:'0 4px 18px rgba(255,221,0,0.45), 0 2px 6px rgba(0,0,0,0.4)',
-          border:'2px solid rgba(255,255,255,0.25)',
-          whiteSpace:'nowrap',
-          transition:'transform 0.15s, box-shadow 0.15s',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.transform='scale(1.07)'; e.currentTarget.style.boxShadow='0 6px 24px rgba(255,221,0,0.6), 0 2px 8px rgba(0,0,0,0.5)'; }}
-        onMouseLeave={e => { e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.boxShadow='0 4px 18px rgba(255,221,0,0.45), 0 2px 6px rgba(0,0,0,0.4)'; }}
-      >
-        ☕ BUY ME A COFFEE
-      </a>
+      {bmacVisible && (
+        <div style={{ position:'fixed', bottom:'60px', right:'18px', zIndex:9999, display:'flex', alignItems:'center', gap:'6px' }}>
+          <a
+            href="/bmac.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Buy me a coffee"
+            style={{
+              display:'inline-flex', alignItems:'center', gap:'6px',
+              background:'#FFDD00', color:'#000',
+              fontWeight:'700', fontSize:'13px', letterSpacing:'0.2px',
+              padding:'9px 16px', borderRadius:'24px',
+              textDecoration:'none', fontFamily:"'Roboto',sans-serif",
+              boxShadow:'0 4px 18px rgba(255,221,0,0.45), 0 2px 6px rgba(0,0,0,0.4)',
+              border:'2px solid rgba(255,255,255,0.25)',
+              whiteSpace:'nowrap',
+              transition:'transform 0.15s, box-shadow 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform='scale(1.06)'; e.currentTarget.style.boxShadow='0 6px 24px rgba(255,221,0,0.6), 0 2px 8px rgba(0,0,0,0.5)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.boxShadow='0 4px 18px rgba(255,221,0,0.45), 0 2px 6px rgba(0,0,0,0.4)'; }}
+          >
+            ☕ Buy me a coffee
+          </a>
+          <button
+            onClick={() => setBmacVisible(false)}
+            title="Hide"
+            style={{
+              width:'22px', height:'22px', borderRadius:'50%',
+              background:'rgba(0,0,0,0.55)', border:'none',
+              color:'rgba(255,255,255,0.7)', fontSize:'11px',
+              cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+              padding:'0', lineHeight:'1', flexShrink:0,
+            }}
+          >✕</button>
+        </div>
+      )}
     </div>
   );
 }
