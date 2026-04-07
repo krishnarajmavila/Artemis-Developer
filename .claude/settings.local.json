@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:artemis-1bq.pages.dev)"
+      "WebFetch(domain:artemis-1bq.pages.dev)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(firebase deploy:*)"
     ]
   }
 }

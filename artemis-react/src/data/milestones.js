@@ -1,0 +1,32 @@
+export const milestonesData = [
+  {label:'Launch',met:'0/00:00'},
+  {label:'ICPS Perigee Raise Maneuver',met:'0/00:49'},
+  {label:'ARB TIG',met:'0/01:46'},
+  {label:'Orion/ICPS Separation',met:'0/03:22'},
+  {label:'Orion USS',met:'0/04:51'},
+  {label:'Solar Panel Deploy',met:'0/05:27'},
+  {label:'Trans-Lunar Injection',met:'1/01:25'},
+  {label:'OTC-1 (cancelled)',met:'2/01:25'},
+  {label:'OTC-2',met:'3/01:25'},
+  {label:'OTC-3',met:'4/04:46'},
+  {label:'Lunar SOI Entry',met:'4/06:54'},
+  {label:'Apollo Distance Record',met:'4/19:37'},
+  {label:'Lunar Close Approach',met:'5/00:46'},
+  {label:'Max Earth Distance',met:'5/00:51'},
+  {label:'Lunar SOI Exit',met:'5/19:09'},
+  {label:'RTC-1',met:'6/01:46'},
+  {label:'RTC-2',met:'8/04:45'},
+  {label:'CM/SM Separation',met:'9/01:25'},
+  {label:'Splashdown',met:'9/01:59'},
+];
+
+export const healthItems = [
+  {name:'ECLSS',status:'NOM',ok:true},
+  {name:'GNC',status:'NOM',ok:true},
+  {name:'COMM',status:'NOM',ok:true},
+  {name:'EPS',status:'NOM',ok:true},
+  {name:'TCS',status:'NOM',ok:true},
+  {name:'DPS',status:'NOM',ok:true},
+  {name:'OMS-E',status:'SBY',ok:null},
+  {name:'RCS',status:'NOM',ok:true},
+];

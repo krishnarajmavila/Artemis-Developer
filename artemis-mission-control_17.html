@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Artemis II · Mission Control</title>
+<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-EVTSECG7JJ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-EVTSECG7JJ'); // Replace XXXXXXXXXX with your GA4 Measurement ID
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -117,6 +125,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Courie
 .ne-label{font-size:12px;color:var(--warn);letter-spacing:1px}
 .ne-val{font-size:15px;color:var(--warn);font-weight:700}
 .ne-time{font-size:13px;color:var(--text2)}
+
+.footer-credits{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px}
+.footer-credits a{color:var(--accent2);text-decoration:none;transition:color 0.2s}
+.footer-credits a:hover{color:var(--accent);text-decoration:underline}
 
 ::-webkit-scrollbar{width:3px;height:3px}
 ::-webkit-scrollbar-track{background:var(--bg)}
@@ -497,6 +509,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Courie
       <div class="ne-val">OTC-2 &mdash; Outbound Trajectory Correction</div>
     </div>
     <div class="ne-time" id="nextEventTime">T-6:18:42</div>
+  </div>
+  <div class="footer-credits">
+    <span style="color:var(--text3)">·</span>
+    <span>Created by</span>
+    <a href="https://www.linkedin.com/in/krishnaraj-m-e-97389a162" target="_blank" rel="noopener noreferrer">Krishnaraj M E</a>
   </div>
   <div style="font-size:8px;color:var(--text3)" id="utcClock">UTC 2025-04-06 17:30:00</div>
   <div style="font-size:8px;color:var(--accent);letter-spacing:1px" id="liveStatusEl">Connecting to JPL Horizons...</div>

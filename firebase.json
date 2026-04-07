@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": ".",
+    "public": "artemis-react/dist",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -9,7 +9,7 @@
     "rewrites": [
       {
         "source": "**",
-        "destination": "/artemis-mission-control_17.html"
+        "destination": "/index.html"
       }
     ]
   }
