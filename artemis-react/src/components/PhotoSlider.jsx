@@ -1,32 +1,32 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 const PHOTOS = [
-  {
-    url: 'https://www.nasa.gov/wp-content/uploads/2026/04/art002e000192.jpg',
-    filename: 'artemis2-art002e000192.jpg',
-    caption: 'ART002E000192',
-  },
-  {
-    url: 'https://www.nasa.gov/wp-content/uploads/2026/04/art002e009057orig.jpg?resize=900,600',
-    filename: 'artemis2-art002e009057.jpg',
-    caption: 'ART002E009057',
-  },
+  { url: 'https://www.nasa.gov/wp-content/uploads/2026/04/art002e000192.jpg',                                                                       caption: 'ART002E000192' },
+  { url: 'https://www.nasa.gov/wp-content/uploads/2026/04/art002e009057orig.jpg?resize=900,600',                                                    caption: 'ART002E009057' },
+  { url: 'https://images-assets.nasa.gov/image/art002e009281/art002e009281~large.jpg?w=900&h=600&fit=crop&crop=faces%2Cfocalpoint',                 caption: 'ART002E009281' },
+  { url: 'https://www.nasa.gov/wp-content/uploads/2026/04/art002e009288orig.jpg?resize=2000,1333',                                                  caption: 'ART002E009288' },
+  { url: 'https://images-assets.nasa.gov/image/art002e009287/art002e009287~large.jpg?w=900&h=600&fit=crop&crop=faces%2Cfocalpoint',                 caption: 'ART002E009287' },
+  { url: 'https://images-assets.nasa.gov/image/art002e009301/art002e009301~large.jpg?w=900&h=600&fit=crop&crop=faces%2Cfocalpoint',                 caption: 'ART002E009301' },
+  { url: 'https://images-assets.nasa.gov/image/art002e009298/art002e009298~large.jpg?w=900&h=600&fit=crop&crop=faces%2Cfocalpoint',                 caption: 'ART002E009298' },
+  { url: 'https://images-assets.nasa.gov/image/art002e009289/art002e009289~large.jpg?w=900&h=600&fit=crop&crop=faces%2Cfocalpoint',                 caption: 'ART002E009289' },
+  { url: 'https://images-assets.nasa.gov/image/art002e009302/art002e009302~large.jpg?w=900&h=600&fit=crop&crop=faces%2Cfocalpoint',                 caption: 'ART002E009302' },
+  { url: 'https://images-assets.nasa.gov/image/art002e009294/art002e009294~large.jpg?w=900&h=600&fit=crop&crop=faces%2Cfocalpoint',                 caption: 'ART002E009294' },
+  { url: 'https://images-assets.nasa.gov/image/art002e009299/art002e009299~large.jpg?w=900&h=600&fit=crop&crop=faces%2Cfocalpoint',                 caption: 'ART002E009299' },
 ];
 
-async function downloadImage(url, filename) {
+async function downloadImage(url, caption) {
   try {
     const resp = await fetch(url, { mode: 'cors' });
     const blob = await resp.blob();
     const objUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = objUrl;
-    a.download = filename;
+    a.download = `artemis2-${caption.toLowerCase()}.jpg`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(objUrl);
   } catch {
-    // CORS blocked — open in new tab so the user can save manually
     window.open(url, '_blank');
   }
 }
@@ -51,17 +51,33 @@ function arrowBtn(side, onClick) {
 
 export default function PhotoSlider() {
   const [idx, setIdx] = useState(0);
-  const touchX = useRef(null);
-  const photo = PHOTOS[idx];
+  const touchX  = useRef(null);
+  const timerRef = useRef(null);
+  const photo    = PHOTOS[idx];
 
   const prev = () => setIdx(i => (i - 1 + PHOTOS.length) % PHOTOS.length);
   const next = () => setIdx(i => (i + 1) % PHOTOS.length);
+
+  // Auto-advance every 5s; reset timer on manual nav
+  function resetTimer() {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => setIdx(i => (i + 1) % PHOTOS.length), 5000);
+  }
+
+  useEffect(() => {
+    resetTimer();
+    return () => clearInterval(timerRef.current);
+  }, []);
+
+  function manualPrev() { prev(); resetTimer(); }
+  function manualNext() { next(); resetTimer(); }
+  function manualDot(i) { setIdx(i); resetTimer(); }
 
   function onTouchStart(e) { touchX.current = e.touches[0].clientX; }
   function onTouchEnd(e) {
     if (touchX.current === null) return;
     const dx = e.changedTouches[0].clientX - touchX.current;
-    if (Math.abs(dx) > 40) dx < 0 ? next() : prev();
+    if (Math.abs(dx) > 40) { dx < 0 ? manualNext() : manualPrev(); }
     touchX.current = null;
   }
 
@@ -85,13 +101,14 @@ export default function PhotoSlider() {
         }}
       >
         <img
+          key={photo.url}
           src={photo.url}
           alt={photo.caption}
           draggable={false}
-          style={{ width: '100%', display: 'block', maxHeight: '175px', objectFit: 'cover' }}
+          style={{ width: '100%', display: 'block', maxHeight: '175px', objectFit: 'cover', transition: 'opacity 0.4s', opacity: 1 }}
         />
-        {arrowBtn('left', prev)}
-        {arrowBtn('right', next)}
+        {arrowBtn('left', manualPrev)}
+        {arrowBtn('right', manualNext)}
 
         {/* Caption bar */}
         <div style={{
@@ -107,13 +124,13 @@ export default function PhotoSlider() {
 
       {/* Dots + download row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '5px' }}>
-        <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
           {PHOTOS.map((_, i) => (
             <button
               key={i}
-              onClick={() => setIdx(i)}
+              onClick={() => manualDot(i)}
               style={{
-                width: '6px', height: '6px', borderRadius: '50%',
+                width: '5px', height: '5px', borderRadius: '50%',
                 border: 'none', padding: 0, cursor: 'pointer',
                 background: i === idx ? 'var(--accent)' : 'var(--border2)',
                 transition: 'background 0.2s',
@@ -122,7 +139,7 @@ export default function PhotoSlider() {
           ))}
         </div>
         <button
-          onClick={() => downloadImage(photo.url, photo.filename)}
+          onClick={() => downloadImage(photo.url, photo.caption)}
           style={{
             fontSize: '8px', color: 'var(--accent)',
             background: 'var(--bg2)', border: '1px solid var(--border)',

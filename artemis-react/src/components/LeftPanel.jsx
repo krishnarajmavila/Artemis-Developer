@@ -59,52 +59,46 @@ export default function LeftPanel({ disp, velCanvasRef }) {
         </div>
       </div>
 
-      <div className="panel-title" style={{marginTop:'10px'}}>Deep Space Network</div>
+      <div className="panel-title" style={{marginTop:'10px'}}>
+        Deep Space Network
+        {disp.dsnLive && <span style={{marginLeft:'6px',fontSize:'8px',color:'var(--success)',letterSpacing:'1px'}}>● LIVE</span>}
+      </div>
       <div className="dsn-panel">
-        <div className="dsn-ant">
-          <div>
-            <div className="dsn-ant-name">DSS-63 MADRID</div>
-            <div style={{fontSize:'8px',color:'var(--text3)'}}>34m BWG</div>
+        {disp.dsnDishes && disp.dsnDishes.length > 0 ? disp.dsnDishes.map((d, i) => (
+          <div key={i}>
+            <div className="dsn-ant">
+              <div>
+                <div className="dsn-ant-name">{d.name} {d.station}</div>
+                <div style={{fontSize:'8px',color:'var(--text3)'}}>{d.size}</div>
+              </div>
+              <div className="dsn-ant-status">
+                <div className={`dsn-ant-dot ${d.upActive || d.downActive ? 'dsn-active' : 'dsn-inactive'}`}></div>
+                <span style={{color: d.upActive ? 'var(--warn)' : d.downActive ? 'var(--success)' : 'var(--text3)'}}>
+                  {d.upActive ? 'UP+DOWN' : d.downActive ? 'DOWNLINK' : 'IDLE'}
+                </span>
+              </div>
+            </div>
+            {(d.upActive || d.downActive) && (
+              <div style={{margin:'3px 0 4px'}}>
+                <div className="link-indicator">
+                  <span className="link-arrow">&uarr;</span>
+                  <div className="dsn-bar"><div className="dsn-signal" style={{width: d.upActive ? '60%' : '0%'}}></div></div>
+                  <span className="link-rate">{d.upActive ? `${d.upPower.toFixed(1)}kW` : '—'}</span>
+                </div>
+                <div className="link-indicator" style={{marginTop:'2px'}}>
+                  <span className="link-arrow">&darr;</span>
+                  <div className="dsn-bar"><div className="dsn-signal" style={{width: d.downActive ? '90%' : '0%'}}></div></div>
+                  <span className="link-rate">{d.downActive ? (d.downRate >= 1000 ? `${(d.downRate/1000).toFixed(1)}Mbps` : `${d.downRate.toFixed(0)}kbps`) : '—'}</span>
+                </div>
+                <div style={{fontSize:'8px',color:'var(--text3)',marginTop:'2px'}}>
+                  SIG {d.sigPower} dBm &nbsp;·&nbsp; RTLT {d.rtlt.toFixed(2)}s
+                </div>
+              </div>
+            )}
           </div>
-          <div className="dsn-ant-status">
-            <div className="dsn-ant-dot dsn-active"></div>
-            <span style={{color:'var(--success)'}}>UPLINK</span>
-          </div>
-        </div>
-        <div style={{margin:'3px 0'}}>
-          <div className="link-indicator">
-            <span className="link-arrow">&uarr;</span>
-            <div className="dsn-bar"><div className="dsn-signal" style={{width:`${disp.uplinkBarW}%`}}></div></div>
-            <span className="link-rate">{disp.uplink.toFixed(2)}</span>
-            <span style={{fontSize:'7px',color:'var(--text3)'}}>kbps</span>
-          </div>
-          <div className="link-indicator" style={{marginTop:'2px'}}>
-            <span className="link-arrow">&darr;</span>
-            <div className="dsn-bar"><div className="dsn-signal" style={{width:`${disp.downlinkBarW}%`}}></div></div>
-            <span className="link-rate">{disp.downlink.toFixed(2)}</span>
-            <span style={{fontSize:'7px',color:'var(--text3)'}}>kbps</span>
-          </div>
-        </div>
-        <div className="dsn-ant" style={{marginTop:'4px'}}>
-          <div>
-            <div className="dsn-ant-name">DSS-23 CANBERRA</div>
-            <div style={{fontSize:'8px',color:'var(--text3)'}}>34m BWG</div>
-          </div>
-          <div className="dsn-ant-status">
-            <div className="dsn-ant-dot dsn-inactive"></div>
-            <span style={{color:'var(--text3)'}}>STANDBY</span>
-          </div>
-        </div>
-        <div className="dsn-ant">
-          <div>
-            <div className="dsn-ant-name">DSS-14 GOLDSTONE</div>
-            <div style={{fontSize:'8px',color:'var(--text3)'}}>70m</div>
-          </div>
-          <div className="dsn-ant-status">
-            <div className="dsn-ant-dot dsn-inactive"></div>
-            <span style={{color:'var(--text3)'}}>IDLE</span>
-          </div>
-        </div>
+        )) : (
+          <div style={{fontSize:'9px',color:'var(--text3)',padding:'6px 0'}}>Connecting to DSN feed...</div>
+        )}
       </div>
 
       <div className="panel-title" style={{marginTop:'4px'}}>Crew Status</div>

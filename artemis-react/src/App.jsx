@@ -15,7 +15,16 @@ import {
   computePhase, computeFD, metToHours,
 } from './utils/index.js';
 
-const DSN_STATIONS = ['CAN/MAD', 'MAD/GOL', 'GOL/CAN'];
+const DISH_META = {
+  'DSS-14':'70m',  'DSS-24':'34m BWG','DSS-25':'34m BWG','DSS-26':'34m BWG',
+  'DSS-34':'34m BWG','DSS-35':'34m BWG','DSS-36':'34m BWG','DSS-43':'34m HEF',
+  'DSS-54':'34m BWG','DSS-55':'34m BWG','DSS-63':'34m BWG','DSS-65':'34m BWG',
+};
+const DISH_STATION = {
+  'DSS-14':'GOLDSTONE','DSS-24':'GOLDSTONE','DSS-25':'GOLDSTONE','DSS-26':'GOLDSTONE',
+  'DSS-34':'CANBERRA', 'DSS-35':'CANBERRA', 'DSS-36':'CANBERRA', 'DSS-43':'CANBERRA',
+  'DSS-54':'MADRID',   'DSS-55':'MADRID',   'DSS-63':'MADRID',   'DSS-65':'MADRID',
+};
 
 const INITIAL_SIM = {
   vel: 3319, earthDist: 124.1, moonDist: 118.7, alt: 120.1,
@@ -62,6 +71,8 @@ function buildInitialDisp() {
     crewAct: '\u2014',
     attMode: 'B-XSI',
     missionPhase: 'TRANS-LUNAR',
+    dsnDishes: [],
+    dsnLive: false,
   };
 }
 
@@ -109,9 +120,15 @@ export default function App() {
         REF_SYSTEM: 'J2000', VEC_TABLE: '3', VEC_CORR: 'NONE', CSV_FORMAT: 'YES',
       });
       const jplUrl = 'https://ssd.jpl.nasa.gov/api/horizons.api?' + jplParams;
-      const url = 'https://corsproxy.io/?' + encodeURIComponent(jplUrl);
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const proxies = [
+        'https://cors.eu.org/' + jplUrl,
+        'https://corsproxy.io/?' + encodeURIComponent(jplUrl),
+      ];
+      let resp, lastErr;
+      for (const url of proxies) {
+        try { resp = await fetch(url); if (resp.ok) break; } catch(e) { lastErr = e; }
+      }
+      if (!resp || !resp.ok) throw new Error(lastErr?.message || 'All proxies failed');
       const json = await resp.json();
       const vec = parseHorizons(json.result || '');
       if (!vec) throw new Error('No data');
@@ -169,6 +186,54 @@ export default function App() {
     }
   }, []);
 
+  // Fetch live DSN data for EM2 (Artemis II)
+  const fetchDSN = useCallback(async () => {
+    try {
+      const resp = await fetch(`https://eyes.nasa.gov/dsn/data/dsn.xml?v=${Date.now()}`);
+      if (!resp.ok) throw new Error(`DSN ${resp.status}`);
+      const text = await resp.text();
+      const dishes = [];
+      const blocks = text.split('<dish ');
+      for (const block of blocks.slice(1)) {
+        if (!block.includes('spacecraft="EM2"')) continue;
+        const name   = (block.match(/name="([^"]+)"/) || [])[1] || '';
+        const upM    = block.match(/upSignal[^/]*/);
+        const downM  = block.match(/downSignal[^/]*/);
+        const tgtM   = block.match(/target[^/]*/);
+        const upActive   = /active="true"/.test(upM?.[0] || '');
+        const downActive = /active="true"/.test(downM?.[0] || '');
+        const uplinkRate  = parseFloat((upM?.[0]  || '').match(/dataRate="([^"]+)"/)?.[1] || '0') / 1000;
+        const downRate    = parseFloat((downM?.[0] || '').match(/dataRate="([^"]+)"/)?.[1] || '0') / 1000;
+        const sigPower    = parseFloat((downM?.[0] || '').match(/power="([^"]+)"/)?.[1] || '0');
+        const rtlt        = parseFloat((tgtM?.[0]  || '').match(/rtlt="([^"]+)"/)?.[1]  || '0');
+        const upPower     = parseFloat((upM?.[0]   || '').match(/power="([^"]+)"/)?.[1] || '0');
+        const dishName = name.replace('DSS', 'DSS-');
+        dishes.push({
+          name: dishName,
+          station: DISH_STATION[dishName] || 'UNKNOWN',
+          size: DISH_META[dishName] || '',
+          upActive, downActive,
+          uplinkRate, downRate, sigPower, rtlt, upPower,
+        });
+      }
+      if (dishes.length > 0) {
+        const primary = dishes.find(d => d.upActive || d.downActive) || dishes[0];
+        setDisp(prev => ({
+          ...prev,
+          dsnDishes: dishes,
+          dsnLive: true,
+          sigStrength: primary.sigPower.toFixed(1),
+          lightTime: (primary.rtlt / 2).toFixed(2),
+          uplink:    primary.uplinkRate,
+          downlink:  primary.downRate,
+          dsnStation: primary.station,
+        }));
+      }
+    } catch(e) {
+      // keep existing values on error
+    }
+  }, []);
+
   // 1-second simulation tick
   const tick = useCallback(() => {
     tickRef.current++;
@@ -192,9 +257,6 @@ export default function App() {
     const lt  = (sim.earthDist * 1000 * 1.609 / 299792).toFixed(2);
     const saws = [11.2, 10.9, 11.1, 8.7].map(v => v + (Math.random() - 0.5) * 0.2);
     const total = saws.reduce((a, b) => a + b, 0);
-
-    // DSN rotation
-    dsnIdxRef.current = Math.floor(t / 15) % DSN_STATIONS.length;
 
     // Gantt chips
     const actItem   = getActiveItem(ganttActs,   metH);
@@ -233,7 +295,6 @@ export default function App() {
       sigBarW: 70 + Math.random() * 5,
       saws,
       totalPower: total.toFixed(1),
-      dsnStation: DSN_STATIONS[dsnIdxRef.current],
       nextBurn,
       nextEventLabel: nextEvent.label,
       nextEventTime: nextEvent.timeStr,
@@ -253,12 +314,11 @@ export default function App() {
     // Initial draw
     tick();
     fetchHorizons();
+    fetchDSN();
 
     const simInterval = setInterval(tick, 1000);
     const horizonsInterval = setInterval(fetchHorizons, 60000);
-    const dsnInterval = setInterval(() => {
-      dsnIdxRef.current = (dsnIdxRef.current + 1) % DSN_STATIONS.length;
-    }, 15000);
+    const dsnInterval = setInterval(fetchDSN, 30000);
 
     // Animation loop for trajectory canvas (60fps)
     let animId;
@@ -313,7 +373,7 @@ export default function App() {
       canvas.removeEventListener('touchmove',  onTouchMove);
       canvas.removeEventListener('touchend',   onTouchEnd);
 };
-  }, [tick, fetchHorizons]);
+  }, [tick, fetchHorizons, fetchDSN]);
 
   return (
     <div className="mc-wrap">
