@@ -75,6 +75,9 @@ export default function App() {
   const tickRef     = useRef(0);
   const velHistRef  = useRef([]);
   const starsRef    = useRef(null);
+  const camFrameRef = useRef(0);
+  const panRef      = useRef({ x: 0, y: 0 });
+  const dragRef     = useRef({ active: false, startX: 0, startY: 0, startPanX: 0, startPanY: 0 });
   const dsnIdxRef   = useRef(0);
 
   // Fetch live telemetry from JPL Horizons
@@ -236,13 +239,45 @@ export default function App() {
     // Animation loop for trajectory canvas (60fps)
     let animId;
     function animLoop() {
-      drawTrajectory(trajCanvasRef.current, starsRef);
+      drawTrajectory(trajCanvasRef.current, starsRef, camFrameRef, panRef);
       animId = requestAnimationFrame(animLoop);
     }
     animId = requestAnimationFrame(animLoop);
 
-    const handleResize = () => drawTrajectory(trajCanvasRef.current, starsRef);
+    const handleResize = () => {
+      panRef.current = { x: 0, y: 0 }; // reset pan on resize so nothing goes off-screen
+      drawTrajectory(trajCanvasRef.current, starsRef, camFrameRef, panRef);
+    };
     window.addEventListener('resize', handleResize);
+
+    // Mobile drag-to-pan touch handlers
+    const canvas = trajCanvasRef.current;
+
+    function onTouchStart(e) {
+      if (window.innerWidth >= 768 || e.touches.length !== 1) return;
+      const t = e.touches[0];
+      dragRef.current = {
+        active: true,
+        startX: t.clientX, startY: t.clientY,
+        startPanX: panRef.current.x, startPanY: panRef.current.y,
+      };
+    }
+
+    function onTouchMove(e) {
+      if (!dragRef.current.active || e.touches.length !== 1) return;
+      e.preventDefault(); // prevent page scroll while panning canvas
+      const t = e.touches[0];
+      panRef.current = {
+        x: dragRef.current.startPanX + (t.clientX - dragRef.current.startX),
+        y: dragRef.current.startPanY + (t.clientY - dragRef.current.startY),
+      };
+    }
+
+    function onTouchEnd() { dragRef.current.active = false; }
+
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+    canvas.addEventListener('touchmove',  onTouchMove,  { passive: false });
+    canvas.addEventListener('touchend',   onTouchEnd);
 
     // Scroll gantt to now after first render
     const scrollTimeout = setTimeout(() => ganttScrollToNow(ganttWrapRef.current), 100);
@@ -253,6 +288,9 @@ export default function App() {
       clearInterval(dsnInterval);
       cancelAnimationFrame(animId);
       window.removeEventListener('resize', handleResize);
+      canvas.removeEventListener('touchstart', onTouchStart);
+      canvas.removeEventListener('touchmove',  onTouchMove);
+      canvas.removeEventListener('touchend',   onTouchEnd);
       clearTimeout(scrollTimeout);
     };
   }, [tick, fetchHorizons]);

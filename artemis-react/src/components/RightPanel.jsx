@@ -1,4 +1,5 @@
 import { healthItems } from '../data/milestones.js';
+import PhotoSlider from './PhotoSlider.jsx';
 
 export default function RightPanel({ disp }) {
   return (
@@ -26,6 +27,8 @@ export default function RightPanel({ disp }) {
       <div style={{fontSize:'8px',color:'var(--text3)',marginTop:'3px',letterSpacing:'1px',textAlign:'right',marginBottom:'10px'}}>
         SOURCE: NASA TV PUBLIC CHANNEL
       </div>
+
+      <PhotoSlider />
 
       <div className="panel-title">Mission Milestones</div>
       <div className="milestone-list">

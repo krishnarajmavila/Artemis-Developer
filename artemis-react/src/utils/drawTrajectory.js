@@ -1,7 +1,9 @@
 import { ring1, ring2, outbound, gap, moonLoop, returnPath, splash, MET_MAP } from '../data/trajectoryData.js';
 import { LAUNCH_EPOCH_MS } from './index.js';
 
-export function drawTrajectory(canvas, starsRef) {
+function easeIO(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
+
+export function drawTrajectory(canvas, starsRef, camFrameRef, panRef) {
   if (!canvas || !canvas.parentElement) return;
 
   const wrap = canvas.parentElement;
@@ -13,17 +15,21 @@ export function drawTrajectory(canvas, starsRef) {
   H = Math.max(H, 150);
   if (W <= 0 || H <= 0) return;
 
-  canvas.width = W;
-  canvas.height = H;
-  canvas.style.width = W + 'px';
+  // HiDPI / Retina fix — draw at physical pixels, scale context to logical coords
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width  = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width  = W + 'px';
   canvas.style.height = H + 'px';
 
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
+  ctx.scale(dpr, dpr);
 
   ctx.fillStyle = '#0b0d18';
   ctx.fillRect(0, 0, W, H);
 
+  // Stars — drawn in screen space (no zoom transform)
   if (!starsRef.current) {
     starsRef.current = [];
     for (let i = 0; i < 200; i++) {
@@ -53,20 +59,8 @@ export function drawTrajectory(canvas, starsRef) {
     ctx.stroke();
   }
 
-  const LW_DIM = 1.5, LW_BRIGHT = 2;
-  ctx.setLineDash([]);
-  drawSeg(ring1,      'rgba(0,212,255,0.18)', LW_DIM);
-  drawSeg(ring2,      'rgba(0,255,180,0.18)', LW_DIM);
-  drawSeg(outbound,   'rgba(34,197,94,0.20)',  LW_DIM);
-  drawSeg(gap,        'rgba(34,197,94,0.20)',  LW_DIM);
-  drawSeg(moonLoop,   'rgba(34,197,94,0.20)',  LW_DIM);
-  drawSeg(returnPath, 'rgba(6,182,212,0.20)',  LW_DIM);
-  drawSeg(splash,     'rgba(239,68,68,0.20)',  LW_DIM);
-
-  drawSeg(ring1, 'rgba(0,212,255,0.9)', LW_BRIGHT);
-  drawSeg(ring2, 'rgba(0,255,180,0.9)', LW_BRIGHT);
-
-  const metH = (Date.now() - LAUNCH_EPOCH_MS) / 3600000 - 7.5;
+  // Live craft position (computed before camera, needed for zoom target)
+  const metH = (Date.now() - LAUNCH_EPOCH_MS) / 3600000 - 2.5;
   let animIdx = 0;
   if (metH >= 1.42) {
     for (const [ms, me, is, ie] of MET_MAP) {
@@ -83,6 +77,50 @@ export function drawTrajectory(canvas, starsRef) {
   const n_ob = outbound.length + gap.length;
   const n_ml = moonLoop.length;
   const n_rp = returnPath.length;
+
+  const op = allAnim[Math.min(animIdx, allAnim.length - 1)];
+  const ox = sx(op[0]), oy = sy(op[1]);
+
+  // Camera zoom: mobile only — show full orbit first (~1.3s), then ease-zoom onto craft (~1.8s)
+  const isMobile = window.innerWidth < 768;
+  camFrameRef.current++;
+  let zoom = 1, pivX = W / 2, pivY = H / 2;
+  if (isMobile) {
+    const CAM_DELAY   = 80;
+    const CAM_ANIM    = 110;
+    const TARGET_ZOOM = 2.4;
+    const camAlpha    = camFrameRef.current <= CAM_DELAY
+      ? 0
+      : easeIO(Math.min(1, (camFrameRef.current - CAM_DELAY) / CAM_ANIM));
+    zoom = 1 + camAlpha * (TARGET_ZOOM - 1);
+    pivX = W / 2 + camAlpha * (ox - W / 2);
+    pivY = H / 2 + camAlpha * (oy - H / 2);
+  }
+
+  // Apply zoom + pan transform — all trajectory content inside save/restore
+  const panX = isMobile ? (panRef?.current?.x ?? 0) : 0;
+  const panY = isMobile ? (panRef?.current?.y ?? 0) : 0;
+  ctx.save();
+  ctx.translate(panX, panY);      // pan (screen space, applied before zoom)
+  ctx.translate(pivX, pivY);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-pivX, -pivY);
+
+  const LW_DIM = 1.5, LW_BRIGHT = 2;
+  ctx.setLineDash([]);
+
+  // Dim ghost paths
+  drawSeg(ring1,      'rgba(0,212,255,0.18)', LW_DIM);
+  drawSeg(ring2,      'rgba(0,255,180,0.18)', LW_DIM);
+  drawSeg(outbound,   'rgba(34,197,94,0.20)', LW_DIM);
+  drawSeg(gap,        'rgba(34,197,94,0.20)', LW_DIM);
+  drawSeg(moonLoop,   'rgba(34,197,94,0.20)', LW_DIM);
+  drawSeg(returnPath, 'rgba(6,182,212,0.20)', LW_DIM);
+  drawSeg(splash,     'rgba(239,68,68,0.20)', LW_DIM);
+
+  // Bright completed
+  drawSeg(ring1, 'rgba(0,212,255,0.9)', LW_BRIGHT);
+  drawSeg(ring2, 'rgba(0,255,180,0.9)', LW_BRIGHT);
 
   if (animIdx > 0) { const br = allAnim.slice(0, Math.min(animIdx, n_ob)); if (br.length > 1) drawSeg(br, 'rgba(34,197,94,0.9)', LW_BRIGHT); }
   if (animIdx > n_ob) { const br = allAnim.slice(n_ob, Math.min(animIdx, n_ob + n_ml)); if (br.length > 1) drawSeg(br, 'rgba(34,197,94,0.9)', LW_BRIGHT); }
@@ -113,6 +151,7 @@ export function drawTrajectory(canvas, starsRef) {
   ctx.textAlign = 'center';
   ctx.fillText('MOON', mX, sy(164));
 
+  // Waypoint dots
   function wdot(svgX, svgY, label, done) {
     const px = sx(svgX), py = sy(svgY), r = 3 * sc, fs = 10.5 * sc;
     ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2);
@@ -124,15 +163,14 @@ export function drawTrajectory(canvas, starsRef) {
     ctx.textAlign = 'center';
     ctx.fillText(label, px, py - r - 3);
   }
-  wdot(120,    90,   'Launch',        true);
-  wdot(50.64,  91.79,'TLI',           true);
-  wdot(769.85, 119.60,'SOI Entry',    false);
-  wdot(898.65, 99.05,'Close Approach',false);
-  wdot(867.19, 183.14,'SOI Exit',     false);
-  wdot(120.54, 140.25,'Splashdown',   false);
+  wdot(120,    90,    'Launch',         true);
+  wdot(50.64,  91.79, 'TLI',            true);
+  wdot(769.85, 119.60,'SOI Entry',      false);
+  wdot(898.65,  99.05,'Close Approach', false);
+  wdot(867.19, 183.14,'SOI Exit',       false);
+  wdot(120.54, 140.25,'Splashdown',     false);
 
-  const op = allAnim[Math.min(animIdx, allAnim.length - 1)];
-  const ox = sx(op[0]), oy = sy(op[1]);
+  // Orion craft — trail + dot + glow
   for (let i = 1; i <= 15; i++) {
     const ti = Math.max(0, animIdx - i);
     const tp = allAnim[ti];
@@ -144,7 +182,10 @@ export function drawTrajectory(canvas, starsRef) {
   ctx.beginPath(); ctx.arc(ox, oy, 7 * sc, 0, Math.PI * 2);
   ctx.strokeStyle = 'rgba(0,255,136,0.35)'; ctx.lineWidth = 2 * sc; ctx.stroke();
 
+  ctx.restore(); // end zoom transform
+
+  // Corner labels — screen space, always readable regardless of zoom
   ctx.font = `${13.5 * sc}px Courier New`; ctx.fillStyle = 'rgba(55,85,115,0.80)';
-  ctx.textAlign = 'left'; ctx.fillText('ORBIT MAP', offX + 4, offY + 12 * sc);
+  ctx.textAlign = 'left';  ctx.fillText('ORBIT MAP', offX + 4, offY + 12 * sc);
   ctx.textAlign = 'right'; ctx.fillText('FREE-RETURN TRAJECTORY', W - offX - 4, offY + 12 * sc);
 }
