@@ -4,6 +4,7 @@ import LeftPanel from './components/LeftPanel.jsx';
 import CenterPanel from './components/CenterPanel.jsx';
 import RightPanel from './components/RightPanel.jsx';
 import Footer from './components/Footer.jsx';
+import InstallToast from './components/InstallToast.jsx';
 import { milestonesData } from './data/milestones.js';
 import { ganttActs, ganttAtt, ganttPhases } from './data/ganttData.js';
 import { drawTrajectory } from './utils/drawTrajectory.js';
@@ -309,6 +310,7 @@ export default function App() {
         <RightPanel disp={disp} />
       </div>
       <Footer disp={disp} />
+      <InstallToast />
     </div>
   );
 }

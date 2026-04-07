@@ -4,7 +4,10 @@
       "WebFetch(domain:artemis-1bq.pages.dev)",
       "Bash(npm install:*)",
       "Bash(npm run:*)",
-      "Bash(firebase deploy:*)"
+      "Bash(firebase deploy:*)",
+      "Bash(node -e ':*)",
+      "Bash(node -e \"const {createCanvas} = require\\('canvas'\\); console.log\\('ok'\\)\")",
+      "Bash(node:*)"
     ]
   }
 }

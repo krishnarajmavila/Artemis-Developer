@@ -967,32 +967,37 @@ function updateGanttChips(metH) {
 const trajCanvas = document.getElementById('trajCanvas');
 let stars = null;
 let tick = 0;
+let camFrame = 0;
+function easeIO(t){return t<0.5?2*t*t:-1+(4-2*t)*t;}
 
 function drawTrajectory() {
   if (!trajCanvas || !trajCanvas.parentElement) return;
-  
+
   const wrap = trajCanvas.parentElement;
   let W = wrap.offsetWidth || wrap.clientWidth;
   let H = wrap.offsetHeight || wrap.clientHeight;
-  
+
   // Fallback dimensions
   if (!W) W = window.innerWidth - 20;
   if (!H) H = window.innerWidth < 768 ? 600 : 750;
-  
+
   // CAP WIDTH TO ACTUAL VIEWPORT - PREVENTS OVERSIZED CANVAS ON MOBILE
   W = Math.min(W, window.innerWidth - 20);
   H = Math.max(H, 150); // Ensure minimum height
-  
+
   if (W <= 0 || H <= 0) return;
-  
-  trajCanvas.width = W;
-  trajCanvas.height = H;
+
+  // HiDPI / Retina fix — draw at physical pixel resolution, scale context down
+  const dpr = window.devicePixelRatio || 1;
+  trajCanvas.width = Math.round(W * dpr);
+  trajCanvas.height = Math.round(H * dpr);
   trajCanvas.style.width = W + 'px';
   trajCanvas.style.height = H + 'px';
-  
+
   const ctx = trajCanvas.getContext('2d');
   if (!ctx) return;
-  
+  ctx.scale(dpr, dpr);
+
   ctx.fillStyle='#0b0d18'; ctx.fillRect(0,0,W,H);
 
   if(!stars){stars=[];for(let i=0;i<200;i++)stars.push({x:Math.random(),y:Math.random(),r:Math.random()*0.8+0.2,a:Math.random()*0.45+0.08});}
@@ -1000,7 +1005,6 @@ function drawTrajectory() {
 
   // SVG viewBox is 0 0 1000 280 — scale proportionally, center with letterbox
   const scaleX = W/1000, scaleY = H/280;
-  // Use uniform scale (preserveAspectRatio xMidYMid meet) like the original SVG
   const sc = Math.min(scaleX, scaleY);
   const offX = (W - 1000*sc)/2;
   const offY = (H - 280*sc)/2;
@@ -1011,8 +1015,6 @@ function drawTrajectory() {
   const ring1=[[120,90],[127.82,90.62],[135.45,92.45],[142.70,95.45],[149.39,99.55],[155.36,104.64],[160.45,110.61],[164.55,117.30],[167.55,124.55],[169.38,132.18],[170,140],[169.38,147.82],[167.55,155.45],[164.55,162.70],[160.45,169.39],[155.36,175.36],[149.39,180.45],[142.70,184.55],[135.45,187.55],[127.82,189.38],[120,190],[112.18,189.38],[104.55,187.55],[97.30,184.55],[90.61,180.45],[84.64,175.36],[79.55,169.39],[75.45,162.70],[72.45,155.45],[70.62,147.82],[70,140],[70.62,132.18],[72.45,124.55],[75.45,117.30],[79.55,110.61],[84.64,104.64],[90.61,99.55],[97.30,95.45],[104.55,92.45],[112.18,90.62],[120,90]];
   const ring2=[[120,90],[127.40,90.11],[134.77,91.32],[141.94,93.61],[148.75,96.97],[155.05,101.33],[160.68,106.62],[165.51,112.72],[169.43,119.53],[172.32,126.89],[174.11,134.67],[174.75,142.69],[174.19,150.78],[172.43,158.76],[169.50,166.46],[165.43,173.69],[160.31,180.31],[154.22,186.13],[147.28,191.04],[139.64,194.90],[131.46,197.62],[122.90,199.12],[114.16,199.34],[105.41,198.26],[96.85,195.89],[88.67,192.27],[81.06,187.44],[74.20,181.51],[68.24,174.58],[63.33,166.80],[59.59,158.32],[57.13,149.33],[56,140],[56.26,130.55],[57.92,121.17],[60.96,112.08],[65.33,103.47],[70.96,95.55],[77.73,88.50],[85.52,82.48],[94.17,77.64],[103.49,74.10],[113.30,71.95],[123.38,71.27],[133.51,72.08],[143.48,74.39],[153.06,78.16],[162.03,83.32],[170.20,89.80],[177.38,97.44],[183.39,106.12],[188.09,115.64],[191.35,125.81],[193.10,136.41],[193.27,147.22],[191.84,158.00],[188.83,168.51],[184.28,178.53],[178.27,187.82],[170.91,196.17],[162.36,203.40],[152.79,209.32],[142.39,213.80],[131.38,216.72],[120,218],[108.49,217.59],[97.10,215.48],[86.09,211.70],[75.69,206.31],[66.15,199.42],[57.68,191.15],[50.47,181.67],[44.70,171.19],[40.52,159.91],[38.02,148.07],[37.29,135.94],[38.35,123.76],[41.20,111.81],[45.81,100.34],[52.08,89.63],[59.90,79.90]];
   const outbound=[[59.90,79.90],[67.00,72.91],[74.67,66.59],[82.89,60.89],[91.63,55.80],[100.88,51.30],[110.62,47.36],[120.83,43.98],[131.50,41.12],[142.60,38.76],[154.12,36.89],[166.03,35.49],[178.33,34.52],[190.99,33.98],[204.00,33.84],[217.33,34.08],[230.97,34.68],[244.90,35.62],[259.10,36.87],[273.55,38.42],[288.24,40.25],[303.14,42.33],[318.25,44.65],[333.53,47.18],[348.98,49.90],[364.57,52.79],[380.29,55.83],[396.12,59.01],[412.03,62.29],[428.02,65.66],[444.06,69.10],[460.13,72.58],[476.22,76.09],[492.31,79.60],[508.38,83.10],[524.41,86.56],[540.38,89.96],[556.28,93.28],[572.09,96.50],[587.79,99.61],[603.36,102.57],[618.78,105.36],[634.03,107.98],[649.10,110.39],[663.97,112.57],[678.62,114.51],[693.03,116.19],[707.19,117.57],[721.07,118.65],[734.66,119.39],[747.93,119.79],[760.88,119.82],[773.48,119.45],[776.13,119.32]];
-  // Gap: smooth bezier from outbound end [776.13,119.32] to moonLoop start [859.57,99.90]
-  // Control points follow the natural curve of the outbound arc continuing toward Moon
   const gap=(()=>{const pts=[];const p0x=776.13,p0y=119.32,c1x=800,c1y=116,c2x=835,c2y=103,p3x=859.57,p3y=99.90;for(let i=1;i<=30;i++){const t=i/30,u=1-t;pts.push([u*u*u*p0x+3*u*u*t*c1x+3*u*t*t*c2x+t*t*t*p3x,u*u*u*p0y+3*u*u*t*c1y+3*u*t*t*c2y+t*t*t*p3y]);}return pts;})();
   const moonLoop=[[859.57,99.90],[863.76,98.03],[868.13,96.59],[872.61,95.61],[877.17,95.09],[881.77,95.03],[886.34,95.45],[890.85,96.33],[895.24,97.66],[899.48,99.43],[903.51,101.63],[907.30,104.23],[910.80,107.20],[913.99,110.51],[916.82,114.12],[919.26,118.01],[921.30,122.13],[922.91,126.43],[924.07,130.87],[924.77,135.41],[925,140],[924.77,144.59],[924.07,149.13],[922.91,153.57],[921.30,157.87],[919.26,161.99],[916.82,165.88],[913.99,169.49],[910.80,172.80],[907.30,175.77],[903.51,178.37],[899.48,180.57],[895.24,182.34],[890.85,183.67],[886.34,184.55],[881.77,184.97],[877.17,184.91],[872.61,184.39],[868.13,183.41],[863.76,181.97],[859.57,180.10]];
   const returnPath=[[859.57,180.10],[850.53,175.77],[841.25,171.87],[831.73,168.37],[821.98,165.27],[812.01,162.54],[801.82,160.17],[791.44,158.16],[780.85,156.47],[770.09,155.11],[759.14,154.05],[748.02,153.28],[736.75,152.78],[725.32,152.54],[713.74,152.55],[702.04,152.79],[690.20,153.25],[678.25,153.90],[666.19,154.75],[654.03,155.76],[641.78,156.94],[629.44,158.26],[617.03,159.70],[604.55,161.26],[592.02,162.92],[579.44,164.66],[566.81,166.47],[554.16,168.34],[541.48,170.25],[528.78,172.18],[516.08,174.12],[503.39,176.06],[490.70,177.99],[478.04,179.88],[465.40,181.72],[452.80,183.50],[440.25,185.20],[427.75,186.82],[415.31,188.32],[402.94,189.71],[390.66,190.96],[378.46,192.06],[366.36,192.99],[354.37,193.75],[342.49,194.31],[330.73,194.67],[319.11,194.80],[307.62,194.69],[296.29,194.33],[285.11,193.71],[274.10,192.80],[263.26,191.59],[252.61,190.08],[242.14,188.24],[231.88,186.06],[221.83,183.52],[211.99,180.61],[202.38,177.32],[193.01,173.63],[183.88,169.53],[175,165]];
@@ -1024,38 +1026,15 @@ function drawTrajectory() {
     ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.stroke();
   }
 
-  const LW_DIM = 1.5, LW_BRIGHT = 2;
-
-  // Dim ghost paths
-  ctx.setLineDash([]);
-  drawSeg(ring1,     'rgba(0,212,255,0.18)',  LW_DIM);
-  drawSeg(ring2,     'rgba(0,255,180,0.18)',  LW_DIM);
-  drawSeg(outbound,  'rgba(34,197,94,0.20)',   LW_DIM);
-  drawSeg(gap,       'rgba(34,197,94,0.20)',   LW_DIM);
-  drawSeg(moonLoop,  'rgba(34,197,94,0.20)',   LW_DIM);
-  drawSeg(returnPath,'rgba(6,182,212,0.20)',   LW_DIM);
-  drawSeg(splash,    'rgba(239,68,68,0.20)',   LW_DIM);
-
-  // Bright completed: ring1 (blue) + ring2 (purple) always fully done
-  drawSeg(ring1,'rgba(0,212,255,0.9)',  LW_BRIGHT);
-  drawSeg(ring2,'rgba(0,255,180,0.9)',  LW_BRIGHT);
-
-  // ── Live position: calculate directly from current time every frame ──
-  // Mission: Launch 2026-04-02T20:03:00Z, Splashdown 2026-04-11T20:00:00Z (~216h total)
-  // Milestones (MET hours) → path index mapping:
-  //   TLI  1.4h  → idx 0   (start of outbound)
-  //   SOI Entry 109h → idx 83
-  //   Close Approach 124h → idx 103
-  //   SOI Exit 139h → idx 124
-  //   Splashdown 216h → idx 205
+  // ── Live position: compute animIdx from current time ──
   const LAUNCH_MS = 1775082912000; // 2026-04-01T22:35:12Z
   const metH = (Date.now() - LAUNCH_MS) / 3600000;
   const MET_MAP = [
-    [1.42,  120.0,  0,   83],   // TLI → SOI Entry (outbound+gap)
-    [120.0, 130.0,  83,  103],  // SOI Entry → Close Approach
-    [130.0, 143.0,  103, 124],  // Close Approach → SOI Exit
-    [143.0, 213.0,  124, 184],  // SOI Exit → pre-splash
-    [213.0, 216.0,  184, 205],  // EDL → Splashdown
+    [1.42,  120.0,  0,   83],
+    [120.0, 130.0,  83,  103],
+    [130.0, 143.0,  103, 124],
+    [143.0, 213.0,  124, 184],
+    [213.0, 216.0,  184, 205],
   ];
   let animIdx = 0;
   if(metH < 1.42) {
@@ -1073,6 +1052,43 @@ function drawTrajectory() {
 
   const allAnim=[...outbound,...gap,...moonLoop,...returnPath,...splash];
   const n_ob=outbound.length+gap.length, n_ml=moonLoop.length, n_rp=returnPath.length;
+
+  // Current craft position in canvas coords (needed for camera before drawing)
+  const op=allAnim[Math.min(animIdx,allAnim.length-1)];
+  const ox=sx(op[0]),oy=sy(op[1]);
+
+  // ── Camera: show full orbit first, then ease-zoom onto craft position ──
+  camFrame++;
+  const CAM_DELAY = 80;   // ~1.3s at 60fps — full view hold
+  const CAM_ANIM  = 110;  // ~1.8s eased zoom
+  const TARGET_ZOOM = window.innerWidth < 768 ? 2.4 : 2.0;
+  const camAlpha = camFrame <= CAM_DELAY ? 0 : easeIO(Math.min(1, (camFrame - CAM_DELAY) / CAM_ANIM));
+  const zoom = 1 + camAlpha * (TARGET_ZOOM - 1);
+  // Pivot point: lerp from canvas center to craft
+  const pivX = W/2 + camAlpha * (ox - W/2);
+  const pivY = H/2 + camAlpha * (oy - H/2);
+
+  // Apply zoom transform — all trajectory content lives inside save/restore
+  ctx.save();
+  ctx.translate(pivX, pivY);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-pivX, -pivY);
+
+  const LW_DIM = 1.5, LW_BRIGHT = 2;
+
+  // Dim ghost paths
+  ctx.setLineDash([]);
+  drawSeg(ring1,     'rgba(0,212,255,0.18)',  LW_DIM);
+  drawSeg(ring2,     'rgba(0,255,180,0.18)',  LW_DIM);
+  drawSeg(outbound,  'rgba(34,197,94,0.20)',  LW_DIM);
+  drawSeg(gap,       'rgba(34,197,94,0.20)',  LW_DIM);
+  drawSeg(moonLoop,  'rgba(34,197,94,0.20)',  LW_DIM);
+  drawSeg(returnPath,'rgba(6,182,212,0.20)',  LW_DIM);
+  drawSeg(splash,    'rgba(239,68,68,0.20)',  LW_DIM);
+
+  // Bright completed: ring1 + ring2 always fully done
+  drawSeg(ring1,'rgba(0,212,255,0.9)',  LW_BRIGHT);
+  drawSeg(ring2,'rgba(0,255,180,0.9)',  LW_BRIGHT);
 
   if(animIdx>0){const br=allAnim.slice(0,Math.min(animIdx,n_ob));if(br.length>1)drawSeg(br,'rgba(34,197,94,0.9)',LW_BRIGHT);}
   if(animIdx>n_ob){const br=allAnim.slice(n_ob,Math.min(animIdx,n_ob+n_ml));if(br.length>1)drawSeg(br,'rgba(34,197,94,0.9)',LW_BRIGHT);}
@@ -1095,7 +1111,7 @@ function drawTrajectory() {
   ctx.fillStyle='rgba(150,180,220,0.6)';ctx.font=`${13.5*sc}px Courier New`;ctx.textAlign='center';
   ctx.fillText('MOON',mX,sy(164));
 
-  // Waypoint dots — exact SVG positions
+  // Waypoint dots
   function wdot(svgX,svgY,label,done){
     const px=sx(svgX),py=sy(svgY),r=3*sc,fs=10.5*sc;
     ctx.beginPath();ctx.arc(px,py,r,0,Math.PI*2);
@@ -1106,31 +1122,27 @@ function drawTrajectory() {
     ctx.fillStyle=done?'rgba(255,255,255,0.7)':'rgba(255,255,255,0.25)';
     ctx.textAlign='center';ctx.fillText(label,px,py-r-3);
   }
-  // Exact SVG waypoint coords
-  wdot(120,   90,   'Launch',        true);
-  wdot(50.64, 91.79,'TLI',           true);
-  wdot(769.85,119.60,'SOI Entry',    false);
+  wdot(120,   90,   'Launch',         true);
+  wdot(50.64, 91.79,'TLI',            true);
+  wdot(769.85,119.60,'SOI Entry',     false);
   wdot(898.65, 99.05,'Close Approach',false);
-  wdot(867.19,183.14,'SOI Exit',     false);
-  wdot(120.54,140.25,'Splashdown',   false);
+  wdot(867.19,183.14,'SOI Exit',      false);
+  wdot(120.54,140.25,'Splashdown',    false);
 
-  // Orion craft — exact SVG: r=4 with glow, trail dots r=1.5
-  const op=allAnim[Math.min(animIdx,allAnim.length-1)];
-  const ox=sx(op[0]),oy=sy(op[1]);
-  // Fading trail (matches SVG's 15 trailing dots)
+  // Orion craft — trail + dot + glow
   for(let i=1;i<=15;i++){
     const ti=Math.max(0,animIdx-i);
     const tp=allAnim[ti];
     ctx.beginPath();ctx.arc(sx(tp[0]),sy(tp[1]),1.5*sc,0,Math.PI*2);
     ctx.fillStyle=`rgba(0,255,136,${(15-i)/15*0.47})`;ctx.fill();
   }
-  // Main craft dot
   ctx.beginPath();ctx.arc(ox,oy,4*sc,0,Math.PI*2);ctx.fillStyle='#00ff88';ctx.fill();
-  // Glow ring
   ctx.beginPath();ctx.arc(ox,oy,7*sc,0,Math.PI*2);
   ctx.strokeStyle='rgba(0,255,136,0.35)';ctx.lineWidth=2*sc;ctx.stroke();
 
-  // Corner labels
+  ctx.restore(); // end zoom transform
+
+  // Corner labels — screen space, always readable
   ctx.font=`${13.5*sc}px Courier New`;ctx.fillStyle='rgba(55,85,115,0.80)';
   ctx.textAlign='left';ctx.fillText('ORBIT MAP',offX+4,offY+12*sc);
   ctx.textAlign='right';ctx.fillText('FREE-RETURN TRAJECTORY',W-offX-4,offY+12*sc);
