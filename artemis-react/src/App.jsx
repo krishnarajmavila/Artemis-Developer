@@ -8,7 +8,7 @@ import InstallToast from './components/InstallToast.jsx';
 import { milestonesData } from './data/milestones.js';
 import { ganttActs, ganttAtt, ganttPhases } from './data/ganttData.js';
 import { drawTrajectory } from './utils/drawTrajectory.js';
-import { drawGantt, ganttScrollToNow, drawVelGraph } from './utils/drawGantt.js';
+import { drawVelGraph } from './utils/drawGantt.js';
 import {
   LAUNCH_EPOCH_MS, pad, formatMET, getRealMetSeconds,
   computeMilestones, computeNextBurn, computeNextEvent, getActiveItem,
@@ -47,6 +47,7 @@ function buildInitialDisp() {
     downlinkBarW: 85,
     sigStrength: '-147.3',
     lightTime: '1.22',
+    radVel: '—',
     sigBarW: 72,
     saws: [11.2, 10.9, 11.1, 8.7],
     totalPower: '41.9',
@@ -69,8 +70,6 @@ export default function App() {
 
   const trajCanvasRef  = useRef(null);
   const velCanvasRef   = useRef(null);
-  const ganttCanvasRef = useRef(null);
-  const ganttWrapRef   = useRef(null);
 
   const simRef      = useRef({ ...INITIAL_SIM });
   const tickRef     = useRef(0);
@@ -101,38 +100,64 @@ export default function App() {
     }
     try {
       const now = new Date(), stop = new Date(now.getTime() + 120000);
-      const url = 'https://ssd.jpl.nasa.gov/api/horizons.api?' + new URLSearchParams({
+      const jplParams = new URLSearchParams({
         format: 'json', COMMAND: "'-1024'", OBJ_DATA: 'NO', MAKE_EPHEM: 'YES',
         EPHEM_TYPE: 'VECTORS', CENTER: "'500@399'",
         START_TIME: `'${toHorizonsTime(now)}'`, STOP_TIME: `'${toHorizonsTime(stop)}'`,
         STEP_SIZE: "'1m'", OUT_UNITS: 'KM-S', REF_PLANE: 'ECLIPTIC',
         REF_SYSTEM: 'J2000', VEC_TABLE: '3', VEC_CORR: 'NONE', CSV_FORMAT: 'YES',
       });
+      const jplUrl = 'https://ssd.jpl.nasa.gov/api/horizons.api?' + jplParams;
+      const url = 'https://corsproxy.io/?' + encodeURIComponent(jplUrl);
       const resp = await fetch(url);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const json = await resp.json();
       const vec = parseHorizons(json.result || '');
       if (!vec) throw new Error('No data');
 
-      const distKm = Math.sqrt(vec.x ** 2 + vec.y ** 2 + vec.z ** 2);
-      const velMph = Math.sqrt(vec.vx ** 2 + vec.vy ** 2 + vec.vz ** 2) * 2236.94;
+      const distKm  = Math.sqrt(vec.x ** 2 + vec.y ** 2 + vec.z ** 2);
+      const velKms  = Math.sqrt(vec.vx ** 2 + vec.vy ** 2 + vec.vz ** 2);
+      const velMph  = velKms * 2236.94;
       const distKmi = (distKm * 0.621371 / 1000).toFixed(1);
+
+      // Altitude above Earth's surface (subtract Earth radius 6,371 km)
+      const altKm  = Math.max(0, distKm - 6371);
+      const altKmi = (altKm * 0.621371 / 1000).toFixed(1);
+
+      // Moon distance
       const moonLon = (218.316 + 13.176396 * (now - new Date('2000-01-01T12:00:00Z')) / 86400000) * Math.PI / 180;
       const mX = 384400 * Math.cos(moonLon), mY = 384400 * Math.sin(moonLon);
       const moonKmi = (Math.sqrt((vec.x - mX) ** 2 + (vec.y - mY) ** 2 + vec.z ** 2) * 0.621371 / 1000).toFixed(1);
 
-      simRef.current.vel = velMph;
+      // Heading (yaw) from velocity vector projected into ecliptic plane
+      const yawDeg = ((Math.atan2(vec.vy, vec.vx) * 180 / Math.PI) + 360) % 360;
+
+      // Pitch: elevation angle of velocity vector above ecliptic plane
+      const pitchDeg = Math.asin(Math.max(-1, Math.min(1, vec.vz / velKms))) * 180 / Math.PI;
+
+      // Radial velocity (km/s), + = moving away from Earth
+      const vRadial = (vec.x * vec.vx + vec.y * vec.vy + vec.z * vec.vz) / distKm;
+
+      // Ecliptic longitude of craft (degrees)
+      const eclLon = ((Math.atan2(vec.y, vec.x) * 180 / Math.PI) + 360) % 360;
+      const eclLat = Math.asin(Math.max(-1, Math.min(1, vec.z / distKm))) * 180 / Math.PI;
+
+      simRef.current.vel       = velMph;
       simRef.current.earthDist = parseFloat(distKmi);
-      simRef.current.moonDist = parseFloat(moonKmi);
-      simRef.current.alt = parseFloat(distKmi);
+      simRef.current.moonDist  = parseFloat(moonKmi);
+      simRef.current.alt       = parseFloat(altKmi);
 
       setDisp(prev => ({
         ...prev,
         velDisplay: Math.round(velMph).toLocaleString(),
-        earthDist: distKmi,
-        moonDist: moonKmi,
-        alt: distKmi,
-        lightTime: (distKm / 299792.458).toFixed(2),
+        earthDist:  distKmi,
+        moonDist:   moonKmi,
+        alt:        altKmi,
+        lightTime:  (distKm / 299792.458).toFixed(2),
+        pitch:      parseFloat(pitchDeg.toFixed(1)),
+        yaw:        parseFloat(yawDeg.toFixed(1)),
+        coords:     `${eclLon.toFixed(2)}\u00b0 / ${eclLat.toFixed(2)}\u00b0`,
+        radVel:     vRadial.toFixed(2),
         liveStatus: `LIVE · JPL Horizons · ${now.toUTCString().slice(17, 25)} UTC`,
       }));
     } catch (e) {
@@ -197,7 +222,7 @@ export default function App() {
       pitch: sim.pitch,
       yaw: sim.yaw,
       roll: sim.roll,
-      gforce: sim.gforce,
+      gforce: sim.gforce.toFixed(4),
       uplink: sim.uplink,
       downlink: sim.downlink,
       uplinkBarW: Math.min(95, Math.max(40, sim.uplink / 3 * 100)),
@@ -212,7 +237,7 @@ export default function App() {
       nextEventLabel: nextEvent.label,
       nextEventTime: nextEvent.timeStr,
       utcClock: `UTC ${now.toISOString().replace('T', ' ').substring(0, 19)}`,
-      coords: `LAT ${lat}\u00b0 / LON ${lon}\u00b0`,
+      // coords intentionally not overwritten here — set from live JPL data every 60s
       milestones,
       crewAct: actItem ? actItem.l.toUpperCase() : '\u2014',
       attMode: attItem ? attItem.l.toUpperCase() : 'B-XSI',
@@ -221,15 +246,12 @@ export default function App() {
 
     // Canvas draws
     drawVelGraph(velCanvasRef.current, velHistRef, sim.vel);
-    drawGantt(ganttCanvasRef.current);
-    if (window.innerWidth < 768) ganttScrollToNow(ganttWrapRef.current);
   }, []);
 
   useEffect(() => {
     // Initial draw
     tick();
     fetchHorizons();
-    ganttScrollToNow(ganttWrapRef.current);
 
     const simInterval = setInterval(tick, 1000);
     const horizonsInterval = setInterval(fetchHorizons, 60000);
@@ -280,9 +302,6 @@ export default function App() {
     canvas.addEventListener('touchmove',  onTouchMove,  { passive: false });
     canvas.addEventListener('touchend',   onTouchEnd);
 
-    // Scroll gantt to now after first render
-    const scrollTimeout = setTimeout(() => ganttScrollToNow(ganttWrapRef.current), 100);
-
     return () => {
       clearInterval(simInterval);
       clearInterval(horizonsInterval);
@@ -292,8 +311,7 @@ export default function App() {
       canvas.removeEventListener('touchstart', onTouchStart);
       canvas.removeEventListener('touchmove',  onTouchMove);
       canvas.removeEventListener('touchend',   onTouchEnd);
-      clearTimeout(scrollTimeout);
-    };
+};
   }, [tick, fetchHorizons]);
 
   return (
@@ -304,13 +322,33 @@ export default function App() {
         <CenterPanel
           disp={disp}
           trajCanvasRef={trajCanvasRef}
-          ganttCanvasRef={ganttCanvasRef}
-          ganttWrapRef={ganttWrapRef}
         />
         <RightPanel disp={disp} />
       </div>
       <Footer disp={disp} />
       <InstallToast />
+      <a
+        href="/bmac.html"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Buy me a coffee"
+        style={{
+          position:'fixed', bottom:'22px', right:'18px', zIndex:9999,
+          display:'inline-flex', alignItems:'center', gap:'6px',
+          background:'#FFDD00', color:'#000',
+          fontWeight:'800', fontSize:'12px', letterSpacing:'0.3px',
+          padding:'9px 14px', borderRadius:'24px',
+          textDecoration:'none', fontFamily:'cursive',
+          boxShadow:'0 4px 18px rgba(255,221,0,0.45), 0 2px 6px rgba(0,0,0,0.4)',
+          border:'2px solid rgba(255,255,255,0.25)',
+          whiteSpace:'nowrap',
+          transition:'transform 0.15s, box-shadow 0.15s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.transform='scale(1.07)'; e.currentTarget.style.boxShadow='0 6px 24px rgba(255,221,0,0.6), 0 2px 8px rgba(0,0,0,0.5)'; }}
+        onMouseLeave={e => { e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.boxShadow='0 4px 18px rgba(255,221,0,0.45), 0 2px 6px rgba(0,0,0,0.4)'; }}
+      >
+        ☕ BUY ME A COFFEE
+      </a>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 export default function LeftPanel({ disp, velCanvasRef }) {
   return (
     <div className="mc-panel">
-      <div className="panel-title">Orbital Telemetry &middot; estimated</div>
+      <div className="panel-title">Orbital Telemetry &middot; {disp.liveStatus && disp.liveStatus.startsWith('LIVE') ? <span style={{color:'var(--success)',fontSize:'10px'}}>LIVE</span> : 'estimated'}</div>
 
       <div style={{fontSize:'8px',color:'var(--text3)',letterSpacing:'1px',marginBottom:'4px'}}>DYNAMICS</div>
       <div className="stat-row">
@@ -11,6 +11,10 @@ export default function LeftPanel({ disp, velCanvasRef }) {
       <div className="stat-row">
         <span className="stat-label">G-FORCE</span>
         <span><span className="stat-val">{disp.gforce}</span> <span className="stat-unit">g</span></span>
+      </div>
+      <div className="stat-row">
+        <span className="stat-label">RADIAL VEL</span>
+        <span><span className="stat-val" style={{color: disp.radVel > 0 ? 'var(--warn)' : 'var(--accent)'}}>{disp.radVel ?? '—'}</span> <span className="stat-unit">km/s</span></span>
       </div>
       <div className="vel-graph"><canvas ref={velCanvasRef}></canvas></div>
 
@@ -27,15 +31,13 @@ export default function LeftPanel({ disp, velCanvasRef }) {
         <span className="stat-label">MOON DIST</span>
         <span><span className="stat-val">{disp.moonDist}</span> <span className="stat-unit">kmi</span></span>
       </div>
-
-      <div style={{fontSize:'8px',color:'var(--text3)',letterSpacing:'1px',margin:'8px 0 4px'}}>ORBIT</div>
       <div className="stat-row">
-        <span className="stat-label">PERIAPSIS</span>
-        <span><span className="stat-val">115</span> <span className="stat-unit">mi</span></span>
+        <span className="stat-label">SIGNAL LAG</span>
+        <span><span className="stat-val">{disp.lightTime}</span> <span className="stat-unit">s</span></span>
       </div>
       <div className="stat-row">
-        <span className="stat-label">APOAPSIS</span>
-        <span><span className="stat-val">{disp.alt}</span> <span className="stat-unit">kmi</span></span>
+        <span className="stat-label">ECL COORDS</span>
+        <span style={{fontSize:'11px',color:'var(--text2)',fontFamily:'Courier New,monospace'}}>{disp.coords}</span>
       </div>
 
       <div className="attitude-box">

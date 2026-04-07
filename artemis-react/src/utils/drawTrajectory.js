@@ -43,10 +43,10 @@ export function drawTrajectory(canvas, starsRef, camFrameRef, panRef) {
     ctx.fill();
   });
 
-  const scaleX = W / 1000, scaleY = H / 280;
+  const scaleX = W / 1000, scaleY = H / 330;
   const sc = Math.min(scaleX, scaleY);
   const offX = (W - 1000 * sc) / 2;
-  const offY = (H - 280 * sc) / 2;
+  const offY = (H - 330 * sc) / 2;
   const sx = x => x * sc + offX;
   const sy = y => y * sc + offY;
 

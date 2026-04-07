@@ -7,7 +7,10 @@
       "Bash(firebase deploy:*)",
       "Bash(node -e ':*)",
       "Bash(node -e \"const {createCanvas} = require\\('canvas'\\); console.log\\('ok'\\)\")",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(firebase --version)",
+      "WebFetch(domain:www.nasa.gov)",
+      "Bash(python3:*)"
     ]
   }
 }
