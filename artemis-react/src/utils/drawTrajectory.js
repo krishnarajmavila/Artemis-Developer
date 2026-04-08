@@ -60,7 +60,7 @@ export function drawTrajectory(canvas, starsRef, camFrameRef, panRef) {
   }
 
   // Live craft position (computed before camera, needed for zoom target)
-  const metH = (Date.now() - LAUNCH_EPOCH_MS) / 3600000 - 2.5;
+  const metH = (Date.now() - LAUNCH_EPOCH_MS) / 3600000;
   let animIdx = 0;
   if (metH >= 1.42) {
     for (const [ms, me, is, ie] of MET_MAP) {
