@@ -53,19 +53,16 @@
       font-size: 1rem;
     }
 
-    .support-btn {
-      background: #FFDD00;
-      color: #111;
-      font-family: 'Nunito', sans-serif;
-      font-weight: 800;
-      font-size: 0.85rem;
-      padding: 0.5rem 1.1rem;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      transition: transform 0.1s;
+    .close-btn {
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; line-height: 1;
+      color: #777; text-decoration: none;
+      border-radius: 50%;
+      border: 1.5px solid #e0dbd4;
+      transition: background 0.15s, color 0.15s;
     }
-    .support-btn:hover { transform: scale(1.03); }
+    .close-btn:hover { background: #f0ede8; color: #111; }
 
     
 
@@ -364,11 +361,11 @@
 
   <!-- Topbar -->
   <div class="topbar">
-    <a class="bmc-logo" href="file:///C:/Users/krish/Downloads/buymecoffee_2.html#">
+    <a class="bmc-logo" href="/">
       <div class="coffee-icon">☕</div>
       Buy Me a Coffee
     </a>
-    <button class="support-btn">Support Krishna</button>
+    <a href="/" class="close-btn" title="Back to Mission Control">&times;</a>
   </div>
 
 

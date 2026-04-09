@@ -2,7 +2,7 @@ export default function Header({ disp }) {
   return (
     <div className="mc-header">
       <div>
-        <div className="mc-logo">Artemis II &middot; Mission Control</div>
+        <div className="mc-logo" style={{textShadow:'0 0 10px #00ffdccc, 0 0 20px #00ffdc66'}}>Artemis II &middot; Mission Control</div>
         <div style={{fontSize:'8px',color:'var(--text3)',letterSpacing:'1px',marginTop:'1px'}}>JOHNSON SPACE CENTER &middot; MCC-H</div>
       </div>
       <div className="live-badge">&#9679; LIVE</div>

@@ -1,13 +1,17 @@
-const CACHE = 'artemis2-v1';
+const CACHE = 'artemis2-v2';
 
-// On install: cache the app shell
+// On install: skip waiting so new SW activates immediately
 self.addEventListener('install', e => {
   self.skipWaiting();
 });
 
-// On activate: claim all clients
+// On activate: delete ALL old caches, then claim clients
 self.addEventListener('activate', e => {
-  e.waitUntil(clients.claim());
+  e.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => clients.claim())
+  );
 });
 
 // Network-first strategy: always try network, fall back to cache

@@ -10,7 +10,8 @@
       "Bash(node:*)",
       "Bash(firebase --version)",
       "WebFetch(domain:www.nasa.gov)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "WebFetch(domain:services.swpc.noaa.gov)"
     ]
   }
 }

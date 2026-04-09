@@ -30,10 +30,9 @@ export default function InstallToast() {
     function onBeforeInstall(e) {
       e.preventDefault();
       promptRef.current = e;
-      setVisible(true);
     }
     window.addEventListener('beforeinstallprompt', onBeforeInstall);
-    const timer = setTimeout(() => setVisible(true), 2500);
+    const timer = setTimeout(() => setVisible(true), 10000);
     window.addEventListener('appinstalled', dismiss);
 
     return () => {
@@ -69,12 +68,12 @@ export default function InstallToast() {
   return (
     <>
       <div style={{
-        position:'fixed', bottom:'16px', left:'50%', transform:'translateX(-50%)',
+        position:'fixed', top:'16px', left:'50%', transform:'translateX(-50%)',
         zIndex:9999, width:'min(94vw,380px)',
         background:'rgb(89 54 107)', border:'1px solid rgba(0,212,255,0.3)',
         borderRadius:'8px', boxShadow:'0 6px 32px rgba(0,0,0,0.8)',
         padding:'12px 14px', display:'flex', alignItems:'center', gap:'12px',
-        animation:'a2up 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+        animation:'a2down 0.35s cubic-bezier(0.34,1.56,0.64,1)',
       }}>
         <img src="/icon-192.png" alt="" style={{width:'42px',height:'42px',borderRadius:'10px',flexShrink:0}} />
         <div style={{flex:1,minWidth:0}}>
@@ -85,7 +84,7 @@ export default function InstallToast() {
           <button onClick={dismiss} style={btn('ghost')}>NOT NOW</button>
           <button onClick={handleInstall} style={btn('primary')}>{isIOS()?'HOW TO':'INSTALL'}</button>
         </div>
-        <style>{`@keyframes a2up{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}`}</style>
+        <style>{`@keyframes a2down{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}`}</style>
       </div>
 
       {iosGuide && (

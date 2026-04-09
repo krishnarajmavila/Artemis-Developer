@@ -5,6 +5,7 @@ import CenterPanel from './components/CenterPanel.jsx';
 import RightPanel from './components/RightPanel.jsx';
 import Footer from './components/Footer.jsx';
 import InstallToast from './components/InstallToast.jsx';
+import BmacModal from './components/BmacModal.jsx';
 import { milestonesData } from './data/milestones.js';
 import { ganttActs, ganttAtt, ganttPhases } from './data/ganttData.js';
 import { drawTrajectory } from './utils/drawTrajectory.js';
@@ -78,7 +79,9 @@ function buildInitialDisp() {
 
 export default function App() {
   const [disp, setDisp] = useState(buildInitialDisp);
-  const [bmacVisible, setBmacVisible] = useState(true);
+  const [bmacVisible, setBmacVisible] = useState(false);
+  const [bmacOpen,    setBmacOpen]    = useState(false);
+  useEffect(() => { const t = setTimeout(() => setBmacVisible(true), 6000); return () => clearTimeout(t); }, []);
 
   const trajCanvasRef  = useRef(null);
   const velCanvasRef   = useRef(null);
@@ -389,28 +392,26 @@ export default function App() {
       <Footer disp={disp} />
       <InstallToast />
       {bmacVisible && (
-        <div style={{ position:'fixed', bottom:'60px', right:'18px', zIndex:9999, display:'flex', alignItems:'center', gap:'6px' }}>
-          <a
-            href="/bmac.html"
-            target="_blank"
-            rel="noopener noreferrer"
+        <div style={{ position:'fixed', bottom:'12px', right:'12px', zIndex:9999, display:'flex', alignItems:'center', gap:'6px' }}>
+          <button
+            onClick={() => setBmacOpen(true)}
             title="Buy me a coffee"
             style={{
               display:'inline-flex', alignItems:'center', gap:'6px',
               background:'#FFDD00', color:'#000',
               fontWeight:'700', fontSize:'13px', letterSpacing:'0.2px',
-              padding:'9px 16px', borderRadius:'24px',
-              textDecoration:'none', fontFamily:"'Roboto',sans-serif",
+              padding:'7px 14px', borderRadius:'20px',
+              fontFamily:"'Roboto',sans-serif",
               boxShadow:'0 4px 18px rgba(255,221,0,0.45), 0 2px 6px rgba(0,0,0,0.4)',
               border:'2px solid rgba(255,255,255,0.25)',
-              whiteSpace:'nowrap',
+              whiteSpace:'nowrap', cursor:'pointer',
               transition:'transform 0.15s, box-shadow 0.15s',
             }}
             onMouseEnter={e => { e.currentTarget.style.transform='scale(1.06)'; e.currentTarget.style.boxShadow='0 6px 24px rgba(255,221,0,0.6), 0 2px 8px rgba(0,0,0,0.5)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.boxShadow='0 4px 18px rgba(255,221,0,0.45), 0 2px 6px rgba(0,0,0,0.4)'; }}
           >
             ☕ Buy me a coffee
-          </a>
+          </button>
           <button
             onClick={() => setBmacVisible(false)}
             title="Hide"
@@ -424,6 +425,7 @@ export default function App() {
           >✕</button>
         </div>
       )}
+      {bmacOpen && <BmacModal onClose={() => setBmacOpen(false)} />}
     </div>
   );
 }

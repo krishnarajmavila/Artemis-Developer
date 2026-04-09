@@ -1,5 +1,12 @@
 import { ring1, ring2, outbound, gap, moonLoop, returnPath, splash, MET_MAP } from '../data/trajectoryData.js';
 import { LAUNCH_EPOCH_MS } from './index.js';
+import cpPng from '../cp.png';
+
+let _craftImg = null;
+function getCraftImg() {
+  if (!_craftImg) { _craftImg = new Image(); _craftImg.src = cpPng; }
+  return _craftImg;
+}
 
 function easeIO(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
 
@@ -9,9 +16,9 @@ export function drawTrajectory(canvas, starsRef, camFrameRef, panRef) {
   const wrap = canvas.parentElement;
   let W = wrap.offsetWidth || wrap.clientWidth;
   let H = wrap.offsetHeight || wrap.clientHeight;
-  if (!W) W = window.innerWidth - 20;
+  if (!W) W = window.innerWidth;
   if (!H) H = window.innerWidth < 768 ? 600 : 750;
-  W = Math.min(W, window.innerWidth - 20);
+  if (window.innerWidth >= 768) W = Math.min(W, window.innerWidth - 20);
   H = Math.max(H, 150);
   if (W <= 0 || H <= 0) return;
 
@@ -177,10 +184,14 @@ export function drawTrajectory(canvas, starsRef, camFrameRef, panRef) {
     ctx.beginPath(); ctx.arc(sx(tp[0]), sy(tp[1]), 1.5 * sc, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(0,255,136,${(15 - i) / 15 * 0.47})`; ctx.fill();
   }
-  ctx.beginPath(); ctx.arc(ox, oy, 4 * sc, 0, Math.PI * 2);
-  ctx.fillStyle = '#00ff88'; ctx.fill();
-  ctx.beginPath(); ctx.arc(ox, oy, 7 * sc, 0, Math.PI * 2);
-  ctx.strokeStyle = 'rgba(0,255,136,0.35)'; ctx.lineWidth = 2 * sc; ctx.stroke();
+  const img = getCraftImg();
+  const imgSize = 36 * sc;
+  if (img.complete && img.naturalWidth > 0) {
+    ctx.drawImage(img, ox - imgSize / 2, oy - imgSize / 2, imgSize, imgSize);
+  } else {
+    ctx.beginPath(); ctx.arc(ox, oy, 4 * sc, 0, Math.PI * 2);
+    ctx.fillStyle = '#00ff88'; ctx.fill();
+  }
 
   ctx.restore(); // end zoom transform
 

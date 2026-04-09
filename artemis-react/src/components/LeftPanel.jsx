@@ -1,3 +1,5 @@
+import SpaceWeather from './SpaceWeather';
+
 export default function LeftPanel({ disp, velCanvasRef }) {
   return (
     <div className="mc-panel">
@@ -17,6 +19,8 @@ export default function LeftPanel({ disp, velCanvasRef }) {
         <span><span className="stat-val" style={{color: disp.radVel > 0 ? 'var(--warn)' : 'var(--accent)'}}>{disp.radVel ?? '—'}</span> <span className="stat-unit">km/s</span></span>
       </div>
       <div className="vel-graph"><canvas ref={velCanvasRef}></canvas></div>
+
+      <SpaceWeather />
 
       <div style={{fontSize:'8px',color:'var(--text3)',letterSpacing:'1px',margin:'8px 0 4px'}}>POSITION</div>
       <div className="stat-row">
