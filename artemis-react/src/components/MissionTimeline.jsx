@@ -27,7 +27,7 @@ export default function MissionTimeline() {
   const dragState = useRef({ active: false, startX: 0, scrollLeft: 0 });
 
   const metH       = (Date.now() - LAUNCH_EPOCH_MS) / 3600000;
-  const currentFD  = Math.min(10, Math.max(1, Math.floor(metH / 24) + 1));
+  const currentFD  = Math.min(10, Math.max(1, Math.floor((metH + 7) / 24) + 1));
   const missionPct = Math.min(100, Math.max(0, (metH / (9 * 24 + 1.77)) * 100));
   const nextMs     = milestonesData.find(m => metToHours(m.met) > metH);
 
@@ -99,8 +99,9 @@ export default function MissionTimeline() {
         {flightDays.map(({ fd, phase, color, events }) => {
           const isCurrent = fd === currentFD;
           const isDone    = fd < currentFD;
-          const fdStart   = (fd - 1) * 24;
-          const fdMs      = milestonesData.filter(m => metToHours(m.met) >= fdStart && metToHours(m.met) < fdStart + 26);
+          const fdMs      = milestonesData.filter(m => m.fd === fd);
+          const fdDate    = new Date(LAUNCH_EPOCH_MS + (fd - 1) * 86400000);
+          const fdDateStr = fdDate.toLocaleDateString('en-US', { month:'short', day:'2-digit', timeZone:'UTC' }).toUpperCase();
 
           return (
             <div key={fd} data-fd={fd} style={{
@@ -119,6 +120,7 @@ export default function MissionTimeline() {
                     {isDone    && <span style={{ fontSize:'9px', marginLeft:'4px', color:'#00e676' }}>✓</span>}
                     {isCurrent && <span style={{ fontSize:'8px', marginLeft:'4px', color:'#00d4ff', letterSpacing:'1px' }}>▶ NOW</span>}
                   </span>
+                  <span style={{ fontSize:'8px', color: isCurrent ? 'rgba(200,220,255,0.7)' : 'rgba(120,150,180,0.5)', fontFamily:'Courier New,monospace', letterSpacing:'0.5px' }}>{fdDateStr}</span>
                 </div>
                 <div style={{ fontSize:'8px', color, letterSpacing:'0.8px', marginTop:'2px', lineHeight:'1.2', fontWeight:'600', textTransform:'uppercase' }}>{phase}</div>
               </div>

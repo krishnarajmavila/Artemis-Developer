@@ -44,8 +44,8 @@ export const flightDays = [
   { fd: 5,  phase: 'LUNAR APPROACH',     color: '#00aa66', events: ['OTC-3 Burn', 'Lunar SOI Entry', 'OCSS Suit Demo', 'SAT Mode Test'] },
   { fd: 6,  phase: 'LUNAR FLYBY',        color: '#00cc88', events: ['Apollo 13 Record', 'Lunar Close Approach', 'Max Earth Distance', 'SOI Exit', 'RTC-1 Burn'] },
   { fd: 7,  phase: 'TRANS-EARTH',        color: '#0088bb', events: ['Crew Off Duty Day', 'FCS Checkouts', 'Personal Family Conf', 'RTCS Demo'] },
-  { fd: 8,  phase: 'TRANS-EARTH',        color: '#0088bb', events: ['Manual Pilot DFTO', 'Radiation Shelter Demo', 'RTC-2 Burn', 'Systems Review'] },
-  { fd: 9,  phase: 'ENTRY PREP',         color: '#cc6600', events: ['RTC-3 Burn', 'Entry Conference', 'OIG Don DFTO', 'Entry Stow', 'Crew Sleep Shift'] },
+  { fd: 8,  phase: 'TRANS-EARTH',        color: '#0088bb', events: ['Manual Pilot DFTO', 'Radiation Shelter Demo', 'Entry Systems Review', 'Crew Rest'] },
+  { fd: 9,  phase: 'ENTRY PREP',         color: '#cc6600', events: ['RTC-2 Burn', 'RTC-3 Burn', 'Entry Conference', 'OIG Don DFTO', 'Entry Stow', 'Crew Sleep Shift'] },
   { fd: 10, phase: 'EDL / RECOVERY',     color: '#cc2200', events: ['CM/SM Separation', 'Entry Interface', 'Splashdown', 'Recovery Ops'] },
 ];
 

@@ -25,15 +25,15 @@ export default function LeftPanel({ disp, velCanvasRef }) {
       <div style={{fontSize:'8px',color:'var(--text3)',letterSpacing:'1px',margin:'8px 0 4px'}}>POSITION</div>
       <div className="stat-row">
         <span className="stat-label">ALTITUDE</span>
-        <span><span className="stat-val">{disp.alt}</span> <span className="stat-unit">kmi</span></span>
+        <span><span className="stat-val">{disp.alt}</span> <span className="stat-unit">mi</span></span>
       </div>
       <div className="stat-row">
         <span className="stat-label">EARTH DIST</span>
-        <span><span className="stat-val success">{disp.earthDist}</span> <span className="stat-unit">kmi</span></span>
+        <span><span className="stat-val success">{disp.earthDist}</span> <span className="stat-unit">mi</span></span>
       </div>
       <div className="stat-row">
         <span className="stat-label">MOON DIST</span>
-        <span><span className="stat-val">{disp.moonDist}</span> <span className="stat-unit">kmi</span></span>
+        <span><span className="stat-val">{disp.moonDist}</span> <span className="stat-unit">mi</span></span>
       </div>
       <div className="stat-row">
         <span className="stat-label">SIGNAL LAG</span>

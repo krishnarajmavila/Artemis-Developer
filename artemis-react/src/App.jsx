@@ -27,10 +27,14 @@ const DISH_STATION = {
   'DSS-54':'MADRID',   'DSS-55':'MADRID',   'DSS-63':'MADRID',   'DSS-65':'MADRID',
 };
 
+// Position seeded to 0 — AROW fetch populates real values on load
 const INITIAL_SIM = {
-  vel: 3319, earthDist: 124.1, moonDist: 118.7, alt: 120.1,
+  vel: 0, earthDist: 0, moonDist: 0, alt: 0,
   pitch: -0.8, yaw: 152.5, roll: 0.0, uplink: 2.07, downlink: 8.42, gforce: 0.000,
 };
+
+// Always format miles with commas regardless of browser locale
+function fmtMi(n) { return Math.round(n).toLocaleString('en-US'); }
 
 function buildInitialDisp() {
   const metS = getRealMetSeconds();
@@ -43,10 +47,10 @@ function buildInitialDisp() {
     phase: computePhase(metH),
     fd: computeFD(metH),
     fdNum: String(Math.min(10, Math.max(1, Math.floor((metH + 7) / 24) + 1))),
-    velDisplay: '3,319',
-    alt: '120.1',
-    earthDist: '124.1',
-    moonDist: '118.7',
+    velDisplay: '—',
+    alt: '—',
+    earthDist: '—',
+    moonDist: '—',
     pitch: -0.8,
     yaw: 152.5,
     roll: 0.0,
@@ -87,6 +91,7 @@ export default function App() {
   const velCanvasRef   = useRef(null);
 
   const simRef      = useRef({ ...INITIAL_SIM });
+  const arowReadyRef = useRef(false); // true after first successful AROW fetch
   const tickRef     = useRef(0);
   const velHistRef  = useRef([]);
   const starsRef    = useRef(null);
@@ -139,16 +144,16 @@ export default function App() {
       const distKm  = Math.sqrt(vec.x ** 2 + vec.y ** 2 + vec.z ** 2);
       const velKms  = Math.sqrt(vec.vx ** 2 + vec.vy ** 2 + vec.vz ** 2);
       const velMph  = velKms * 2236.94;
-      const distKmi = (distKm * 0.621371 / 1000).toFixed(1);
+      const distMi = Math.round(distKm * 0.621371);
 
       // Altitude above Earth's surface (subtract Earth radius 6,371 km)
-      const altKm  = Math.max(0, distKm - 6371);
-      const altKmi = (altKm * 0.621371 / 1000).toFixed(1);
+      const altKm = Math.max(0, distKm - 6371);
+      const altMi = Math.round(altKm * 0.621371);
 
       // Moon distance
       const moonLon = (218.316 + 13.176396 * (now - new Date('2000-01-01T12:00:00Z')) / 86400000) * Math.PI / 180;
       const mX = 384400 * Math.cos(moonLon), mY = 384400 * Math.sin(moonLon);
-      const moonKmi = (Math.sqrt((vec.x - mX) ** 2 + (vec.y - mY) ** 2 + vec.z ** 2) * 0.621371 / 1000).toFixed(1);
+      const moonMi = Math.round(Math.sqrt((vec.x - mX) ** 2 + (vec.y - mY) ** 2 + vec.z ** 2) * 0.621371);
 
       // Heading (yaw) from velocity vector projected into ecliptic plane
       const yawDeg = ((Math.atan2(vec.vy, vec.vx) * 180 / Math.PI) + 360) % 360;
@@ -163,17 +168,22 @@ export default function App() {
       const eclLon = ((Math.atan2(vec.y, vec.x) * 180 / Math.PI) + 360) % 360;
       const eclLat = Math.asin(Math.max(-1, Math.min(1, vec.z / distKm))) * 180 / Math.PI;
 
-      simRef.current.vel       = velMph;
-      simRef.current.earthDist = parseFloat(distKmi);
-      simRef.current.moonDist  = parseFloat(moonKmi);
-      simRef.current.alt       = parseFloat(altKmi);
+      simRef.current.vel = velMph;
+
+      // Use JPL position as fallback only when AROW hasn't loaded yet
+      if (!arowReadyRef.current) {
+        simRef.current.earthDist = distMi;
+        simRef.current.moonDist  = moonMi;
+        simRef.current.alt       = altMi;
+        arowReadyRef.current     = true;
+      }
 
       setDisp(prev => ({
         ...prev,
         velDisplay: Math.round(velMph).toLocaleString(),
-        earthDist:  distKmi,
-        moonDist:   moonKmi,
-        alt:        altKmi,
+        earthDist:  arowReadyRef.current ? fmtMi(simRef.current.earthDist) : '—',
+        moonDist:   arowReadyRef.current ? fmtMi(simRef.current.moonDist)  : '—',
+        alt:        arowReadyRef.current ? fmtMi(simRef.current.alt)        : '—',
         lightTime:  (distKm / 299792.458).toFixed(2),
         pitch:      parseFloat(pitchDeg.toFixed(1)),
         yaw:        parseFloat(yawDeg.toFixed(1)),
@@ -186,6 +196,74 @@ export default function App() {
         ...prev,
         liveStatus: `EST · ${new Date().toUTCString().slice(17, 25)} UTC · ${e.message}`,
       }));
+    }
+  }, []);
+
+  // Fetch live position from artemis.cdnspace.ca (AROW-based community API)
+  const fetchAROW = useCallback(async () => {
+    const AROW_URL = 'https://artemis.cdnspace.ca/api/all';
+    const proxies  = [AROW_URL, `https://cors.eu.org/${AROW_URL}`];
+
+    async function tryFetch(url) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 6000); // 6s per attempt
+      try {
+        const r = await fetch(url, { signal: ctrl.signal });
+        clearTimeout(timer);
+        if (!r.ok) throw new Error(r.status);
+        return r.json();
+      } finally { clearTimeout(timer); }
+    }
+
+    let data = null;
+    for (const url of proxies) {
+      try { data = await tryFetch(url); if (data) break; } catch (_) {}
+    }
+    try {
+      if (!data) throw new Error('All sources failed');
+      const tel  = data.telemetry;
+      const arow = data.arow;
+      if (!tel || typeof tel.earthDistKm !== 'number') throw new Error('No telemetry');
+
+      const earthDistMi = Math.round(tel.earthDistKm  * 0.621371);
+      const moonDistMi  = Math.round(tel.moonDistKm   * 0.621371);
+      const altMi       = Math.round(tel.altitudeKm   * 0.621371);
+      const velMph      = Math.round(tel.speedKmH     * 0.621371);
+
+      simRef.current.earthDist = earthDistMi;
+      simRef.current.moonDist  = moonDistMi;
+      simRef.current.alt       = altMi;
+      simRef.current.vel       = velMph;
+      arowReadyRef.current     = true;
+      if (typeof tel.gForce === 'number') simRef.current.gforce = tel.gForce;
+
+      const ts = data.stateVector?.timestamp
+        ? new Date(data.stateVector.timestamp).toUTCString().slice(17, 25)
+        : new Date().toUTCString().slice(17, 25);
+
+      const updates = {
+        earthDist: fmtMi(earthDistMi),
+        moonDist:  fmtMi(moonDistMi),
+        alt:       fmtMi(altMi),
+        velDisplay: velMph.toLocaleString('en-US'),
+        lightTime:  (tel.earthDistKm / 299792.458).toFixed(2),
+        gforce:    (tel.gForce ?? simRef.current.gforce).toFixed(4),
+        liveStatus: `LIVE · AROW · ${ts} UTC`,
+      };
+
+      if (arow?.eulerDeg) {
+        const { roll, pitch, yaw } = arow.eulerDeg;
+        updates.pitch = parseFloat(pitch.toFixed(1));
+        updates.yaw   = parseFloat(yaw.toFixed(1));
+        updates.roll  = parseFloat(roll.toFixed(1));
+        simRef.current.pitch = updates.pitch;
+        simRef.current.yaw   = updates.yaw;
+        simRef.current.roll  = updates.roll;
+      }
+
+      setDisp(prev => ({ ...prev, ...updates }));
+    } catch (e) {
+      setDisp(prev => ({ ...prev, liveStatus: `RECONNECTING · AROW · ${new Date().toUTCString().slice(17,25)} UTC` }));
     }
   }, []);
 
@@ -221,16 +299,29 @@ export default function App() {
       }
       if (dishes.length > 0) {
         const primary = dishes.find(d => d.upActive || d.downActive) || dishes[0];
-        setDisp(prev => ({
-          ...prev,
+
+        // DSN rtlt is the most direct NASA measurement of Earth distance
+        // one-way distance = rtlt/2 * speed of light
+        const dsnUpdates = {
           dsnDishes: dishes,
           dsnLive: true,
           sigStrength: primary.sigPower.toFixed(1),
-          lightTime: (primary.rtlt / 2).toFixed(2),
-          uplink:    primary.uplinkRate,
-          downlink:  primary.downRate,
+          lightTime:  (primary.rtlt / 2).toFixed(2),
+          uplink:     primary.uplinkRate,
+          downlink:   primary.downRate,
           dsnStation: primary.station,
-        }));
+        };
+        if (primary.rtlt > 0) {
+          const earthDistKm = (primary.rtlt / 2) * 299792.458;
+          const earthDistMi = Math.round(earthDistKm * 0.621371);
+          const altMi       = Math.round(Math.max(0, earthDistKm - 6371) * 0.621371);
+          simRef.current.earthDist = earthDistMi;
+          simRef.current.alt       = altMi;
+          arowReadyRef.current     = true;
+          dsnUpdates.earthDist = fmtMi(earthDistMi);
+          dsnUpdates.alt       = fmtMi(altMi);
+        }
+        setDisp(prev => ({ ...prev, ...dsnUpdates }));
       }
     } catch(e) {
       // keep existing values on error
@@ -245,10 +336,13 @@ export default function App() {
     const metSeconds = getRealMetSeconds();
     const metH = metSeconds / 3600;
 
+    // After lunar flyby (~130h MET) craft is returning: Earth dist decreases, Moon dist increases
+    const returning = metH > 130;
+    const drift = 1 + (Math.random() - 0.5) * 0.4; // ~1 mi/sec ≈ 3,600 mph cruise
     sim.vel        += (Math.random() - 0.502) * 2.5;
-    sim.earthDist  += 0.003 + (Math.random() - 0.5) * 0.002;
-    sim.moonDist   -= 0.003 + (Math.random() - 0.5) * 0.002;
-    sim.alt        += (Math.random() - 0.5) * 0.01;
+    sim.earthDist  += returning ? -drift : drift;
+    sim.moonDist   += returning ? drift : -drift;
+    sim.alt        += returning ? -drift : drift;
     sim.pitch      += (Math.random() - 0.5) * 0.05;
     sim.yaw        += (Math.random() - 0.5) * 0.08;
     sim.roll        = Math.sin(t / 200) * 1.5;
@@ -257,7 +351,7 @@ export default function App() {
     sim.gforce      = Math.abs((Math.random() - 0.5) * 0.001);
 
     const sig = -147.3 + (Math.random() - 0.5) * 0.4;
-    const lt  = (sim.earthDist * 1000 * 1.609 / 299792).toFixed(2);
+    const lt  = (sim.earthDist * 1.60934 / 299792).toFixed(2);
     const saws = [11.2, 10.9, 11.1, 8.7].map(v => v + (Math.random() - 0.5) * 0.2);
     const total = saws.reduce((a, b) => a + b, 0);
 
@@ -281,10 +375,10 @@ export default function App() {
       phase: computePhase(metH),
       fd: computeFD(metH),
       fdNum: String(Math.min(10, Math.max(1, Math.floor((metH + 7) / 24) + 1))),
-      velDisplay: Math.round(sim.vel).toLocaleString(),
-      alt: sim.alt.toFixed(1),
-      earthDist: sim.earthDist.toFixed(1),
-      moonDist: sim.moonDist.toFixed(1),
+      velDisplay: arowReadyRef.current ? Math.round(sim.vel).toLocaleString() : '—',
+      alt:        arowReadyRef.current ? fmtMi(sim.alt)       : '—',
+      earthDist:  arowReadyRef.current ? fmtMi(sim.earthDist) : '—',
+      moonDist:   arowReadyRef.current ? fmtMi(sim.moonDist)  : '—',
       pitch: sim.pitch,
       yaw: sim.yaw,
       roll: sim.roll,
@@ -316,12 +410,14 @@ export default function App() {
   useEffect(() => {
     // Initial draw
     tick();
+    fetchAROW();
     fetchHorizons();
     fetchDSN();
 
-    const simInterval = setInterval(tick, 1000);
+    const simInterval      = setInterval(tick,         1000);
+    const arowInterval     = setInterval(fetchAROW,   30000);
     const horizonsInterval = setInterval(fetchHorizons, 60000);
-    const dsnInterval = setInterval(fetchDSN, 30000);
+    const dsnInterval      = setInterval(fetchDSN,    30000);
 
     // Animation loop for trajectory canvas (60fps)
     let animId;
@@ -376,7 +472,7 @@ export default function App() {
       canvas.removeEventListener('touchmove',  onTouchMove);
       canvas.removeEventListener('touchend',   onTouchEnd);
 };
-  }, [tick, fetchHorizons, fetchDSN]);
+  }, [tick, fetchAROW, fetchHorizons, fetchDSN]);
 
   return (
     <div className="mc-wrap">

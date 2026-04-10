@@ -11,7 +11,14 @@
       "Bash(firebase --version)",
       "WebFetch(domain:www.nasa.gov)",
       "Bash(python3:*)",
-      "WebFetch(domain:services.swpc.noaa.gov)"
+      "WebFetch(domain:services.swpc.noaa.gov)",
+      "Bash(npx gh-pages:*)",
+      "WebSearch",
+      "WebFetch(domain:artemis.jakobrosin.com)",
+      "WebFetch(domain:artemis.cdnspace.ca)",
+      "WebFetch(domain:artemislivetracker.com)",
+      "Bash(curl -s --max-time 10 \"https://artemis.cdnspace.ca/api/all\")",
+      "Bash(curl:*)"
     ]
   }
 }

@@ -1,5 +1,5 @@
 import MissionTimeline from './MissionTimeline.jsx';
-import NewsTicker from './NewsTicker.jsx';
+import ActivityTicker from './ActivityTicker.jsx';
 
 export default function CenterPanel({ disp, trajCanvasRef }) {
   return (
@@ -29,7 +29,7 @@ export default function CenterPanel({ disp, trajCanvasRef }) {
         </div>
       </div>
 
-      <NewsTicker />
+      <ActivityTicker />
       <MissionTimeline />
     </div>
   );

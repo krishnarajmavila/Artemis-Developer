@@ -16,6 +16,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Courie
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
 .met-display{font-size:27px;font-weight:700;color:#fff;letter-spacing:2px;font-family:'Courier New',monospace}
 .met-label{font-size:9px;color:var(--text2);letter-spacing:2px}
+.met-block{margin-left:8px;display:flex;align-items:stretch;gap:0}
+.met-block-cell{padding:0 12px}
+.met-block-left{padding-left:0;padding-right:12px;border-right:1px solid var(--border)}
 .phase-badge{background:var(--bg4);border:1px solid var(--accent);color:var(--accent);font-size:13px;letter-spacing:2px;padding:4px 12px;border-radius:2px}
 .hdr-stat{text-align:center}
 .hdr-val{font-size:21px;color:#fff;font-weight:700}
@@ -50,7 +53,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Courie
 
 .mc-center{background:var(--bg);display:flex;flex-direction:column;gap:1px;min-height:0;overflow:hidden}
 .traj-panel{flex:1 1 0;position:relative;background:var(--bg);overflow:visible;min-height:0;display:flex;flex-direction:column}
-.news-ticker{flex-shrink:0;height:28px}
+.news-ticker{flex-shrink:0;height:38px}
 .traj-canvas-wrap{flex:1 1 0;position:relative;min-height:260px;overflow:visible;width:100%;display:flex}
 #trajCanvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block;max-width:100%;max-height:100%}
 
@@ -120,6 +123,41 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Courie
 .footer-credits a{color:var(--accent2);text-decoration:none;transition:color 0.2s}
 .footer-credits a:hover{color:var(--accent);text-decoration:underline}
 
+/* ── Share button ── */
+.share-wrap{position:relative;display:flex;align-items:center}
+.share-btn{
+  display:flex;align-items:center;gap:5px;
+  background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.35);
+  color:var(--accent);font-size:9px;letter-spacing:1.5px;font-family:'Courier New',monospace;font-weight:700;
+  padding:4px 10px;border-radius:2px;cursor:pointer;
+  transition:background .2s,border-color .2s;white-space:nowrap
+}
+.share-btn:hover{background:rgba(0,212,255,.18);border-color:var(--accent)}
+.share-btn-label{display:inline}
+.share-popover{
+  position:absolute;top:calc(100% + 8px);right:0;
+  background:#0f1a2e;border:1px solid var(--border2);border-radius:4px;
+  min-width:170px;z-index:999;
+  box-shadow:0 4px 24px rgba(0,0,0,.6);
+  overflow:hidden
+}
+.share-pop-title{
+  font-size:8px;letter-spacing:2px;color:var(--text3);
+  padding:7px 12px 5px;border-bottom:1px solid var(--border);
+  font-family:'Orbitron',monospace
+}
+.share-option{
+  display:flex;align-items:center;gap:9px;
+  width:100%;padding:10px 14px;border:none;background:transparent;
+  color:var(--text);font-size:13px;font-family:'Courier New',monospace;
+  cursor:pointer;transition:background .15s;text-align:left;
+}
+.share-option:hover{background:rgba(255,255,255,.06)}
+.share-option-wa{color:#25d366}
+.share-option-wa:hover{background:rgba(37,211,102,.08)}
+.share-option-copy{border-top:1px solid var(--border);color:var(--accent)}
+.share-option-copy:hover{background:rgba(0,212,255,.08)}
+
 ::-webkit-scrollbar{width:3px;height:3px}
 ::-webkit-scrollbar-track{background:#070a12}
 ::-webkit-scrollbar-thumb{background:#151f32;border-radius:2px}
@@ -167,6 +205,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Courie
   .next-event-box{flex:1 1 100%}
   .attitude-box{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .attitude-title{grid-column:1/-1}
+  .share-btn-label{display:none}
 }
 @media(max-width:480px){
   html,body{font-size:18px}
@@ -191,16 +230,18 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Courie
   }
 
   /* ── Row 2: MET hero ── */
-  .mc-header>div:nth-child(3){
+  .met-block{
     order:2;width:100%;
-    text-align:center;margin-left:0!important;
+    text-align:center;margin-left:0!important;justify-content:center;
     padding:8px 12px 10px;
     background:rgba(0,212,255,0.04);
     border-top:1px solid var(--border);
     border-bottom:1px solid var(--border)
   }
-  .met-label{font-size:9px;letter-spacing:3px;margin-bottom:2px}
-  .met-display{font-size:28px;letter-spacing:3px}
+  .met-label{font-size:7px;letter-spacing:1px;margin-bottom:1px}
+  .met-display{font-size:23px;letter-spacing:0.5px}
+  .met-block-cell{padding:0 8px}
+  .met-block-left{padding-left:0;padding-right:8px}
 
   /* ── Row 3: status strip — phase · fd · dsn ── */
   .phase-badge{
@@ -238,4 +279,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Courie
 
   .traj-canvas-wrap{height:260px!important;min-height:260px!important;width:100%!important}
   .stat-val{font-size:17px}
+
+  /* share button: title row, far right */
+  .share-wrap{order:1;align-self:center;margin-right:10px}
+  .share-btn{padding:5px 10px;font-size:9px}
+  .share-btn-label{display:none}
+  .share-btn svg{width:15px;height:15px}
+  .share-popover{right:0;min-width:180px}
 }
